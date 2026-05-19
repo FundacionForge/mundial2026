@@ -2,7 +2,7 @@
 // CONFIG — COMPLETAR ANTES DE PUBLICAR
 // ================================================================
 const CONFIG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwMDI239JMzUamwYcT7PXEAQuQH97NvxF8uEfjDKXAXrAtj8BG6zxoJNBslsSHWSBwY/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwF5rh3p1gPveL0ut9hfv75CdngD1CnKsxeTgknXLR9SR86oRy0dMomidwaD2oAzMHgIg/exec',
   ADMIN_PASS: 'mundial2026',
 };
 
