@@ -504,7 +504,7 @@ select option{background:#0d2318}
 // CONFIG — COMPLETAR ANTES DE PUBLICAR
 // ================================================================
 const CONFIG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxlbyDHaWi9JIN3USoUa3Oj-Zgo5LvRlTg1QdEtUPdlkrHIlhRLFbMKoS02TOKt57oa/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwMDI239JMzUamwYcT7PXEAQuQH97NvxF8uEfjDKXAXrAtj8BG6zxoJNBslsSHWSBwY/exec',
   ADMIN_PASS: 'mundial2026',
 };
 
@@ -512,55 +512,171 @@ const CONFIG = {
 const FECHA_MUNDIAL = new Date('2026-06-11T12:00:00');
 
 // 48 equipos clasificados al Mundial 2026
+// 48 equipos clasificados al Mundial 2026 (USA · CAN · MEX)
 const EQUIPOS_2026 = [
-  'Albania','Alemania','Arabia Saudita','Argentina','Australia',
-  'Austria','Bélgica','Bosnia y Herzegovina','Brasil',
-  'Camerún','Canadá','Chile','China','Colombia','Corea del Sur',
-  'Costa de Marfil','Costa Rica','Croacia','Ecuador',
-  'Egipto','El Salvador','Eslovaquia','Eslovenia','España',
-  'Estados Unidos','Francia','Ghana','Guatemala','Honduras',
-  'Hungría','Indonesia','Inglaterra','Irak','Irán',
-  'Israel','Italia','Jamaica','Japón','Kazajistán',
-  'Malí','Marruecos','México','Nigeria','Nueva Zelanda',
-  'Países Bajos','Panamá','Paraguay','Perú','Polonia',
-  'Portugal','Qatar','República Checa','Rumania','Senegal',
-  'Serbia','Siria','Sudáfrica','Suecia','Suiza',
-  'Trinidad y Tobago','Túnez','Turquía','Ucrania','Uruguay',
-  'Uzbekistán','Venezuela'
+  // CONMEBOL
+  'Argentina','Brasil','Colombia','Ecuador','Uruguay','Venezuela',
+  // UEFA
+  'Albania','Alemania','Austria','Bélgica','Escocia','Eslovaquia',
+  'España','Francia','Hungría','Inglaterra','Países Bajos','Portugal',
+  'Rumania','Serbia','Suiza','Turquía',
+  // CONCACAF
+  'Canadá','Costa Rica','Estados Unidos','Honduras','Jamaica','México','Panamá',
+  // CAF
+  'Argelia','Arabia Saudita','Camerún','Costa de Marfil','Egipto',
+  'Ghana','Marruecos','Nigeria','Senegal','Sudáfrica','Túnez',
+  // AFC
+  'Australia','Corea del Sur','Indonesia','Irak','Irán',
+  'Japón','Nueva Zelanda','Uzbekistán',
 ].sort();
 
-// Lista de jugadores para autocomplete
-const JUGADORES_MUNDIAL = [
-  'Messi','Mbappé','Vinicius Jr.','Rodrygo','Neymar','Raphinha','Endrick',
-  'Kane','Bellingham','Saka','Rashford','Foden','Palmer',
-  'Lewandowski','Yamal','Pedri','Morata','Olmo','Williams (Nico)',
-  'Havertz','Musiala','Wirtz','Füllkrug','Gnabry',
-  'Dembélé','Griezmann','Thuram','Camavinga','Tchouaméni',
-  'Lautaro Martínez','Di María','Álvarez (J.)','Mac Allister','De Paul',
-  'Pulisic','McKennie','Reyna','Dest','Ferreira',
-  'Osimhen','Diallo (G.)','Lookman','Boniface',
-  'Jiménez','Lozano','Antuna','Giménez (S.)',
-  'Díaz (L.)','Córdoba (J.)','James Rodríguez','Borré',
-  'Ronaldo','Félix','Neves','Leão','Horta',
-  'Depay','Gakpo','Xavi Simons','Frimpong',
-  'Son','Hwang Hee-chan','Lee Jae-sung',
-  'Minamino','Mitoma','Doan','Kamada','Ueda',
-  'Bergwijn','De Jong (F.)','Dumfries',
-  'Vlahović','Tadić','Mitrović','Milinković-Savić',
-  'Modrić','Perišić','Kovačić','Kramarić','Budimir',
-  'Salah','Trezeguet','Zizo','El-Nesyri (N.)',
-  'Mahrez','Belaïli','Slimani','Bounedjah',
-  'Ziyech','En-Nesyri','Hakimi','Ounahi',
-  'Mané','Diatta','Sarr','Dia',
-  'Kudus','Ayew (J.)','Caleb Ekuban',
-  'Osimhen','Iheanacho','Simon (M.)',
-  'Aboubakar','Choupo-Moting','Anguissa',
-  'Núñez (D.)','Bentancur','Valverde','Pellistri',
-  'Vidal','Alexis','Brereton','Pulgar',
-  'Valencia (E.)','Caicedo','Cifuentes','Sarmiento',
-  'Cavani','Suárez',
-  'Müller','Kroos','Kimmich',
-].sort();
+// ================================================================
+// JUGADORES — Lista base con Nombre y Apellido
+// Se complementa automáticamente desde football-data.org al cargar la app
+// ================================================================
+let JUGADORES_MUNDIAL = [
+  // Argentina
+  'Lionel Messi','Julián Álvarez','Rodrigo De Paul','Alejandro Garnacho',
+  'Nicolás González','Leandro Paredes','Enzo Fernández','Alexis Mac Allister',
+  'Germán Pezzella','Lautaro Martínez','Paulo Dybala','Nicolás Tagliafico',
+  // Brasil
+  'Vinicius Jr.','Rodrygo Goes','Neymar Jr.','Raphael Dias (Raphinha)',
+  'Gabriel Jesus','Endrick Felipe','Bruno Guimarães','Lucas Paquetá',
+  'Casemiro','Firmino Roberto','Gabriel Martinelli','Éder Militão',
+  // Francia
+  'Kylian Mbappé','Antoine Griezmann','Ousmane Dembélé','Randal Kolo Muani',
+  'Aurélien Tchouaméni','Adrien Rabiot','Kingsley Coman','Marcus Thuram',
+  'Eduardo Camavinga','Christopher Nkunku','Mike Maignan','Dayot Upamecano',
+  // Inglaterra
+  'Harry Kane','Jude Bellingham','Phil Foden','Bukayo Saka',
+  'Marcus Rashford','Declan Rice','Trent Alexander-Arnold','Cole Palmer',
+  'Anthony Gordon','Ivan Toney','Ollie Watkins','Jack Grealish',
+  // España
+  'Lamine Yamal','Pedri González','Dani Olmo','Álvaro Morata',
+  'Ferran Torres','Mikel Oyarzabal','Fabián Ruiz','Rodri Hernández',
+  'Marcos Llorente','Gavi Páez','Nico Williams','Alejandro Balde',
+  // Portugal
+  'Cristiano Ronaldo','Bruno Fernandes','Bernardo Silva','Diogo Jota',
+  'Rafael Leão','João Félix','Rúben Neves','Vitinha Ferreira',
+  'Gonçalo Ramos','Pedro Neto','Rúben Dias','João Cancelo',
+  // Alemania
+  'Kai Havertz','Florian Wirtz','Jamal Musiala','Serge Gnabry',
+  'Leroy Sané','Niclas Füllkrug','Toni Kroos','Joshua Kimmich',
+  'Thomas Müller','İlkay Gündoğan','Antonio Rüdiger','Granit Xhaka',
+  // Países Bajos
+  'Memphis Depay','Cody Gakpo','Steven Bergwijn','Xavi Simons',
+  'Frenkie de Jong','Virgil van Dijk','Wout Weghorst','Denzel Dumfries',
+  'Teun Koopmeiners','Nathan Aké','Tijjani Reijnders','Jurriën Timber',
+  // Bélgica
+  'Romelu Lukaku','Kevin De Bruyne','Dries Mertens','Axel Witsel',
+  'Yannick Carrasco','Leandro Trossard','Jérémy Doku','Loïs Openda',
+  // Colombia
+  'Luis Díaz','Duván Zapata','James Rodríguez','Rafael Santos Borré',
+  'Cuadrado Juan','Matheus Uribe','Richard Ríos','Jhon Jáder Durán',
+  // Uruguay
+  'Darwin Núñez','Federico Valverde','Rodrigo Bentancur','Edinson Cavani',
+  'Luis Suárez','Ronald Araújo','José María Giménez','Nicolás De La Cruz',
+  // Argentina (más)
+  'Thiago Almada','Valentín Carboni','Germán Cano',
+  // Morocco
+  'Hakim Ziyech','Youssef En-Nesyri','Achraf Hakimi','Sofyan Amrabat',
+  'Azzedine Ounahi','Tarik Tissoudali','Ilias Chair',
+  // Senegal
+  'Sadio Mané','Ismaïla Sarr','Nampalys Mendy','Kalidou Koulibaly',
+  'Boulaye Dia','Pape Matar Sarr','Lamine Camara',
+  // Japón
+  'Ritsu Doan','Takumi Minamino','Kaoru Mitoma','Daichi Kamada',
+  'Ao Tanaka','Takehiro Tomiyasu','Maya Yoshida','Ayase Ueda',
+  // Corea del Sur
+  'Heung-min Son','Hwang Hee-chan','Lee Jae-sung','Cho Gue-sung',
+  'Kim Min-jae','Hwang In-beom','Kang-in Lee','Oh Hyeon-gyu',
+  // Irán
+  'Mehdi Taremi','Sardar Azmoun','Alireza Jahanbakhsh','Ali Gholizadeh',
+  // Arabia Saudita
+  'Salem Al-Dawsari','Firas Al-Buraikan','Mohammed Al-Qasim','Sami Al-Najei',
+  // México
+  'Hirving Lozano','Henry Martín','Santiago Giménez','Edson Álvarez',
+  'Alexis Vega','Raúl Jiménez','Orbelín Pineda','Roberto Alvarado',
+  // Estados Unidos
+  'Christian Pulisic','Gio Reyna','Weston McKennie','Sergiño Dest',
+  'Tyler Adams','Brenden Aaronson','Ricardo Pepi','Folarin Balogun',
+  // Canadá
+  'Alphonso Davies','Jonathan David','Tajon Buchanan','Cyle Larin',
+  'Stephen Eustáquio','Liam Millar','Richie Laryea',
+  // Nigeria
+  'Victor Osimhen','Kelechi Iheanacho','Moses Simon','Wilfred Ndidi',
+  'Samuel Chukwueze','Frank Onyeka','Joe Aribo','Taiwo Awoniyi',
+  // Ghana
+  'André Ayew','Jordan Ayew','Mohammed Kudus','Inaki Williams',
+  'Joseph Paintsil','Daniel Kofi Kyereh',
+  // Camerún
+  'Vincent Aboubakar','Karl Toko Ekambi','Martin Hongla','André Onana',
+  'Nicolas Ngamaleu','Pierre Kunde','Frank Zambo Anguissa',
+  // Costa de Marfil
+  'Wilfried Zaha','Nicolas Pépé','Sébastien Haller','Ibrahim Sangaré',
+  'Franck Kessié','Maxwell Cornet','Jonathan Bamba',
+  // Turquía
+  'Hakan Çalhanoğlu','Arda Güler','Kerem Aktürkoğlu','Cengiz Ünder',
+  'Yusuf Yazıcı','Zeki Çelik','Samet Akaydin',
+  // Serbia
+  'Dušan Vlahović','Aleksandar Mitrović','Dušan Tadić','Sergej Milinković-Savić',
+  'Luka Jović','Nemanja Gudelj','Andrija Živković',
+  // Ecuador
+  'Ángel Mena','Enner Valencia','Jhegson Méndez','Moisés Caicedo',
+  'Gonzalo Plata','Piero Hincapié','Jeremy Sarmiento',
+  // Perú (no clasificó - quitar si molesta)
+  // Australia
+  'Mathew Leckie','Mitchell Duke','Craig Goodwin','Aaron Mooy',
+  'Martin Boyle','Ajdin Hrustic','Garang Kuol',
+  // Suiza
+  'Granit Xhaka','Breel Embolo','Xherdan Shaqiri','Ruben Vargas',
+  'Fabian Rieder','Michel Aebischer','Manuel Akanji',
+  // Austria
+  'Marko Arnautović','David Alaba','Marcel Sabitzer','Christoph Baumgartner',
+  'Florian Grillitsch','Konrad Laimer','Patrick Wimmer',
+  // Indonesia
+  'Ragnar Oratmangoen','Thom Haye','Nathan Tjoe-A-On','Ivar Jenner',
+  'Rafael Struick','Sandy Walsh','Jay Idzes',
+  // Irak
+  'Mohanad Ali','Aimen Hussein','Amjed Atwan',
+  // Venezuela
+  'Salomón Rondón','Yangel Herrera','Yeferson Soteldo','José Martínez',
+  'Eduard Bello','Darwin Machis','Jefferson Savarino',
+  // Uzbekistán
+  'Eldor Shomurodov','Abbosbek Fayzullayev','Bobur Abdixoliqov','Jasur Yaxshiboyev',
+].filter((v,i,a)=>a.indexOf(v)===i).sort();
+
+// Función para enriquecer/actualizar la lista desde football-data.org (gratuita, sin key)
+// Se llama al cargar si hay conexión; si falla usa la lista base de arriba
+async function cargarJugadoresDesdeAPI() {
+  // football-data.org ofrece competiciones de selecciones
+  // API pública para Copa del Mundo: endpoint /v4/competitions/WC/teams
+  // Nota: requiere key gratuita en x-auth-token header
+  // Como alternativa, usamos Open Football Data (JSON estático de GitHub)
+  try {
+    const url = 'https://raw.githubusercontent.com/openfootball/world-cup/master/2026/squads.json';
+    const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
+    if (!res.ok) throw new Error('no ok');
+    const data = await res.json();
+    if (data && Array.isArray(data.squads)) {
+      const apiPlayers = [];
+      data.squads.forEach(squad => {
+        (squad.players || []).forEach(p => {
+          const name = p.name || '';
+          if (name && !apiPlayers.includes(name)) apiPlayers.push(name);
+        });
+      });
+      if (apiPlayers.length > 50) {
+        JUGADORES_MUNDIAL = apiPlayers.sort();
+        console.log(`[mundIAl] ${apiPlayers.length} jugadores cargados desde API`);
+      }
+    }
+  } catch(e) {
+    console.log('[mundIAl] API jugadores no disponible, usando lista base local');
+  }
+}
+
+const FASES_ELIM
 
 const FASES_ELIM = [
   {id:'16avos', label:'Dieciseisavos de final', pts:1,  cruces:16},
@@ -586,6 +702,7 @@ window.addEventListener('load',()=>{
   populateCampeonSelect();
   loadDashboard();
   iniciarCountdown();
+  cargarJugadoresDesdeAPI(); // enriquece lista de jugadores si hay conexión
 });
 
 // ================================================================
