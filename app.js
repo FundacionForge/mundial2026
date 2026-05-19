@@ -181,7 +181,6 @@ async function cargarJugadoresDesdeAPI() {
   }
 }
 
-const FASES_ELIM
 
 const FASES_ELIM = [
   {id:'16avos', label:'Dieciseisavos de final', pts:1,  cruces:16},
