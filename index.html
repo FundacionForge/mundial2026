@@ -504,7 +504,7 @@ select option{background:#0d2318}
 // CONFIG — COMPLETAR ANTES DE PUBLICAR
 // ================================================================
 const CONFIG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwXVf2iP-SJqeLzC7GBNyOnOCyGFMS2DP3Rkl-Z9IkaR7aY34b5HvO7KYft1ql0Pm2H/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzW02MQMMf0PMZYry3mSW5Z7PVYc6lEPrpgiDhcLCK8e-P9nI7dkTxQC6gw_tb1g4Xh/exec',
   ADMIN_PASS: 'mundial2026',
 };
 
@@ -655,7 +655,14 @@ async function cargarJugadoresDesdeAPI() {
   // Como alternativa, usamos Open Football Data (JSON estático de GitHub)
   try {
     const url = 'https://raw.githubusercontent.com/openfootball/world-cup/master/2026/squads.json';
-    const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+    let res;
+    try {
+      res = await fetch(url, { signal: controller.signal });
+    } finally {
+      clearTimeout(timeoutId);
+    }
     if (!res.ok) throw new Error('no ok');
     const data = await res.json();
     if (data && Array.isArray(data.squads)) {
@@ -697,6 +704,14 @@ let golesElegidos=[];
 // INIT
 // ================================================================
 window.addEventListener('load',()=>{
+  // Aviso si se está viendo desde github.com/blob en lugar de GitHub Pages
+  if (location.hostname === 'github.com') {
+    const banner = document.createElement('div');
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#7f1d1d;color:#fca5a5;padding:12px 20px;font-size:14px;text-align:center;font-family:sans-serif';
+    banner.innerHTML = '⚠️ <strong>URL incorrecta.</strong> Abrí la app desde GitHub Pages: <a href="https://adolforigacci.github.io/mundial2026/" style="color:#fbbf24;font-weight:bold">adolforigacci.github.io/mundial2026</a>';
+    document.body.prepend(banner);
+  }
+
   buildTeamPickers();
   buildGoleadoresPickers();
   populateCampeonSelect();
