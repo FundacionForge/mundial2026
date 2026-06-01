@@ -2,146 +2,351 @@
 // CONFIG — COMPLETAR ANTES DE PUBLICAR
 // ================================================================
 const CONFIG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwF5rh3p1gPveL0ut9hfv75CdngD1CnKsxeTgknXLR9SR86oRy0dMomidwaD2oAzMHgIg/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyJvruSmzWtzB97nzy_GDLyGBDrvz7_eYbuEqxmOcahi3Oazzt3HJNPX6G2PgsDCH_v/exec',
   ADMIN_PASS: 'mundial2026',
 };
 
 // Fecha del inicio del Mundial (cierre por defecto si no se configura otra)
 const FECHA_MUNDIAL = new Date('2026-06-11T12:00:00');
 
-// 48 equipos clasificados al Mundial 2026
 // 48 equipos clasificados al Mundial 2026 (USA · CAN · MEX)
+// Fuente: Jugadoresmundial2026.json (lista oficial de participantes)
 const EQUIPOS_2026 = [
-  // CONMEBOL
-  'Argentina','Brasil','Colombia','Ecuador','Uruguay','Venezuela',
-  // UEFA
-  'Albania','Alemania','Austria','Bélgica','Escocia','Eslovaquia',
-  'España','Francia','Hungría','Inglaterra','Países Bajos','Portugal',
-  'Rumania','Serbia','Suiza','Turquía',
-  // CONCACAF
-  'Canadá','Costa Rica','Estados Unidos','Honduras','Jamaica','México','Panamá',
-  // CAF
-  'Argelia','Arabia Saudita','Camerún','Costa de Marfil','Egipto',
-  'Ghana','Marruecos','Nigeria','Senegal','Sudáfrica','Túnez',
-  // AFC
-  'Australia','Corea del Sur','Indonesia','Irak','Irán',
-  'Japón','Nueva Zelanda','Uzbekistán',
+  "Alemania", "Arabia Saudita", "Argelia", "Argentina",
+  "Australia", "Austria", "Bélgica", "Bosnia y Herzegovina",
+  "Brasil", "Cabo Verde", "Canadá", "Colombia",
+  "Corea del Sur", "Costa de Marfil", "Croacia", "Curazao",
+  "Ecuador", "Egipto", "Escocia", "España",
+  "Estados Unidos", "Francia", "Ghana", "Haití",
+  "Inglaterra", "Irak", "Irán", "Japón",
+  "Jordania", "Marruecos", "México", "Noruega",
+  "Nueva Zelanda", "Países Bajos", "Panamá", "Paraguay",
+  "Portugal", "Qatar", "República Checa", "República Democrática del Congo",
+  "Senegal", "Sudáfrica", "Suecia", "Suiza",
+  "Túnez", "Turquía", "Uruguay", "Uzbekistán",
 ].sort();
 
 // ================================================================
-// JUGADORES — Lista base con Nombre y Apellido
-// Se complementa automáticamente desde football-data.org al cargar la app
+// JUGADORES — Lista oficial y FIJA de las 48 selecciones (1260 jugadores)
+// Fuente: Jugadoresmundial2026.json. Formato: "Nombre Apellido (ABR)".
+// No se modifica desde APIs externas (ver INIT).
 // ================================================================
 let JUGADORES_MUNDIAL = [
-  // Argentina
-  'Lionel Messi','Julián Álvarez','Rodrigo De Paul','Alejandro Garnacho',
-  'Nicolás González','Leandro Paredes','Enzo Fernández','Alexis Mac Allister',
-  'Germán Pezzella','Lautaro Martínez','Paulo Dybala','Nicolás Tagliafico',
-  // Brasil
-  'Vinicius Jr.','Rodrygo Goes','Neymar Jr.','Raphael Dias (Raphinha)',
-  'Gabriel Jesus','Endrick Felipe','Bruno Guimarães','Lucas Paquetá',
-  'Casemiro','Firmino Roberto','Gabriel Martinelli','Éder Militão',
-  // Francia
-  'Kylian Mbappé','Antoine Griezmann','Ousmane Dembélé','Randal Kolo Muani',
-  'Aurélien Tchouaméni','Adrien Rabiot','Kingsley Coman','Marcus Thuram',
-  'Eduardo Camavinga','Christopher Nkunku','Mike Maignan','Dayot Upamecano',
-  // Inglaterra
-  'Harry Kane','Jude Bellingham','Phil Foden','Bukayo Saka',
-  'Marcus Rashford','Declan Rice','Trent Alexander-Arnold','Cole Palmer',
-  'Anthony Gordon','Ivan Toney','Ollie Watkins','Jack Grealish',
-  // España
-  'Lamine Yamal','Pedri González','Dani Olmo','Álvaro Morata',
-  'Ferran Torres','Mikel Oyarzabal','Fabián Ruiz','Rodri Hernández',
-  'Marcos Llorente','Gavi Páez','Nico Williams','Alejandro Balde',
-  // Portugal
-  'Cristiano Ronaldo','Bruno Fernandes','Bernardo Silva','Diogo Jota',
-  'Rafael Leão','João Félix','Rúben Neves','Vitinha Ferreira',
-  'Gonçalo Ramos','Pedro Neto','Rúben Dias','João Cancelo',
-  // Alemania
-  'Kai Havertz','Florian Wirtz','Jamal Musiala','Serge Gnabry',
-  'Leroy Sané','Niclas Füllkrug','Toni Kroos','Joshua Kimmich',
-  'Thomas Müller','İlkay Gündoğan','Antonio Rüdiger','Granit Xhaka',
-  // Países Bajos
-  'Memphis Depay','Cody Gakpo','Steven Bergwijn','Xavi Simons',
-  'Frenkie de Jong','Virgil van Dijk','Wout Weghorst','Denzel Dumfries',
-  'Teun Koopmeiners','Nathan Aké','Tijjani Reijnders','Jurriën Timber',
-  // Bélgica
-  'Romelu Lukaku','Kevin De Bruyne','Dries Mertens','Axel Witsel',
-  'Yannick Carrasco','Leandro Trossard','Jérémy Doku','Loïs Openda',
-  // Colombia
-  'Luis Díaz','Duván Zapata','James Rodríguez','Rafael Santos Borré',
-  'Cuadrado Juan','Matheus Uribe','Richard Ríos','Jhon Jáder Durán',
-  // Uruguay
-  'Darwin Núñez','Federico Valverde','Rodrigo Bentancur','Edinson Cavani',
-  'Luis Suárez','Ronald Araújo','José María Giménez','Nicolás De La Cruz',
-  // Argentina (más)
-  'Thiago Almada','Valentín Carboni','Germán Cano',
-  // Morocco
-  'Hakim Ziyech','Youssef En-Nesyri','Achraf Hakimi','Sofyan Amrabat',
-  'Azzedine Ounahi','Tarik Tissoudali','Ilias Chair',
-  // Senegal
-  'Sadio Mané','Ismaïla Sarr','Nampalys Mendy','Kalidou Koulibaly',
-  'Boulaye Dia','Pape Matar Sarr','Lamine Camara',
-  // Japón
-  'Ritsu Doan','Takumi Minamino','Kaoru Mitoma','Daichi Kamada',
-  'Ao Tanaka','Takehiro Tomiyasu','Maya Yoshida','Ayase Ueda',
-  // Corea del Sur
-  'Heung-min Son','Hwang Hee-chan','Lee Jae-sung','Cho Gue-sung',
-  'Kim Min-jae','Hwang In-beom','Kang-in Lee','Oh Hyeon-gyu',
-  // Irán
-  'Mehdi Taremi','Sardar Azmoun','Alireza Jahanbakhsh','Ali Gholizadeh',
-  // Arabia Saudita
-  'Salem Al-Dawsari','Firas Al-Buraikan','Mohammed Al-Qasim','Sami Al-Najei',
-  // México
-  'Hirving Lozano','Henry Martín','Santiago Giménez','Edson Álvarez',
-  'Alexis Vega','Raúl Jiménez','Orbelín Pineda','Roberto Alvarado',
-  // Estados Unidos
-  'Christian Pulisic','Gio Reyna','Weston McKennie','Sergiño Dest',
-  'Tyler Adams','Brenden Aaronson','Ricardo Pepi','Folarin Balogun',
-  // Canadá
-  'Alphonso Davies','Jonathan David','Tajon Buchanan','Cyle Larin',
-  'Stephen Eustáquio','Liam Millar','Richie Laryea',
-  // Nigeria
-  'Victor Osimhen','Kelechi Iheanacho','Moses Simon','Wilfred Ndidi',
-  'Samuel Chukwueze','Frank Onyeka','Joe Aribo','Taiwo Awoniyi',
-  // Ghana
-  'André Ayew','Jordan Ayew','Mohammed Kudus','Inaki Williams',
-  'Joseph Paintsil','Daniel Kofi Kyereh',
-  // Camerún
-  'Vincent Aboubakar','Karl Toko Ekambi','Martin Hongla','André Onana',
-  'Nicolas Ngamaleu','Pierre Kunde','Frank Zambo Anguissa',
-  // Costa de Marfil
-  'Wilfried Zaha','Nicolas Pépé','Sébastien Haller','Ibrahim Sangaré',
-  'Franck Kessié','Maxwell Cornet','Jonathan Bamba',
-  // Turquía
-  'Hakan Çalhanoğlu','Arda Güler','Kerem Aktürkoğlu','Cengiz Ünder',
-  'Yusuf Yazıcı','Zeki Çelik','Samet Akaydin',
-  // Serbia
-  'Dušan Vlahović','Aleksandar Mitrović','Dušan Tadić','Sergej Milinković-Savić',
-  'Luka Jović','Nemanja Gudelj','Andrija Živković',
-  // Ecuador
-  'Ángel Mena','Enner Valencia','Jhegson Méndez','Moisés Caicedo',
-  'Gonzalo Plata','Piero Hincapié','Jeremy Sarmiento',
-  // Perú (no clasificó - quitar si molesta)
-  // Australia
-  'Mathew Leckie','Mitchell Duke','Craig Goodwin','Aaron Mooy',
-  'Martin Boyle','Ajdin Hrustic','Garang Kuol',
-  // Suiza
-  'Granit Xhaka','Breel Embolo','Xherdan Shaqiri','Ruben Vargas',
-  'Fabian Rieder','Michel Aebischer','Manuel Akanji',
-  // Austria
-  'Marko Arnautović','David Alaba','Marcel Sabitzer','Christoph Baumgartner',
-  'Florian Grillitsch','Konrad Laimer','Patrick Wimmer',
-  // Indonesia
-  'Ragnar Oratmangoen','Thom Haye','Nathan Tjoe-A-On','Ivar Jenner',
-  'Rafael Struick','Sandy Walsh','Jay Idzes',
-  // Irak
-  'Mohanad Ali','Aimen Hussein','Amjed Atwan',
-  // Venezuela
-  'Salomón Rondón','Yangel Herrera','Yeferson Soteldo','José Martínez',
-  'Eduard Bello','Darwin Machis','Jefferson Savarino',
-  // Uzbekistán
-  'Eldor Shomurodov','Abbosbek Fayzullayev','Bobur Abdixoliqov','Jasur Yaxshiboyev',
+  "Aaron Hickey (ESC)", "Aaron Tshibola (COD)", "Aaron Wan-Bissaka (COD)", "Abbosek Fayzullaev (UZB)",
+  "Abdallah Al-Fakhouri (JOR)", "Abdallah Nasib (JOR)", "Abde Ezzalzouli (MAR)", "Abdelmouhib Chamakh (TUN)",
+  "Abdoulaye Seck (SEN)", "Abdukodir Khusanov (UZB)", "Abdul Fatawu Issahaku (GHA)", "Abdul Mumin (GHA)",
+  "Abdulaziz Hatem (QAT)", "Abdulelah Al Amri (KSA)", "Abdülkerim Bardakci (TUR)", "Abdulla Abdullaev (UZB)",
+  "Abdullah Al Hamdan (KSA)", "Abdullah Al Khaibari (KSA)", "Abduvokhid Nematov (UZB)", "Achraf Abada (ALG)",
+  "Achraf Hakimi (MAR)", "Adalberto Carrasquilla (PAN)", "Adam Arous (TUN)", "Adam Hlozek (CHE)",
+  "Adil Boulbina (ALG)", "Adrien Rabiot (FRA)", "Agustín Canobbio (URU)", "Ahmad Al-Juiadi (JOR)",
+  "Ahmad Assaf (JOR)", "Ahmed Alaa (QAT)", "Ahmed Alkassar (KSA)", "Ahmed Basil (IRQ)",
+  "Ahmed Fathi (QAT)", "Ahmed Fatouh (EGI)", "Ahmed Qasem (IRQ)", "Ahmed Reda Tagnaouti (MAR)",
+  "Ahmed Yahya (IRQ)", "Ahmed Zizo (EGI)", "Ahmetcan Kaplan (TUR)", "Aiden O'Neill (AUS)",
+  "Aimar Sher (IRQ)", "Aïssa Mandi (ALG)", "Ajdin Hrustic (AUS)", "Akam Hashim (IRQ)",
+  "Akmal Mozgovoy (UZB)", "Akram Afif (QAT)", "Al-Hashmi Al-Hussain (QAT)", "Alaa Al Hejji (KSA)",
+  "Alan Franco (ECU)", "Alan Minda (ECU)", "Alban Lafont (CIV)", "Alberto Quintero (PAN)",
+  "Alejandro Romero Gamarra Kaku (PAR)", "Alejandro Zendejas (USA)", "Aleksandar Pavlovic (ALE)", "Alessandro Circati (AUS)",
+  "Alessandro Schopf (AUT)", "Alex Arce (PAR)", "Álex Baena (ESP)", "Alex Freeman (USA)",
+  "Álex Grimaldo (ESP)", "Alex Paulsen (NZL)", "Alex Rufer (NZL)", "Alex Sandro (BRA)",
+  "Alexander Bernhardsson (SUE)", "Alexander Djiku (GHA)", "Alexander Isak (SUE)", "Alexander Nübel (ALE)",
+  "Alexander Prass (AUT)", "Alexander Schlager (AUT)", "Alexander Sørloth (NOR)", "Alexandr Sojka (CHE)",
+  "Alexandre Pierre (HAI)", "Alexandro Maidana (PAR)", "Alexis Mac Allister (ARG)", "Alexis Saelemaekers (BEL)",
+  "Alexis Vega (MEX)", "Alfie Jones (CAN)", "Ali Abdi (TUN)", "Ali Ahmed (CAN)",
+  "Ali Al-Hamadi (IRQ)", "Ali Alipour (IRN)", "Ali Azaizeh (JOR)", "Ali Jassim (IRQ)",
+  "Ali Lajami (KSA)", "Ali Majrashi (KSA)", "Ali Olwan (JOR)", "Ali Yousef (IRQ)",
+  "Alidu Seidu (GHA)", "Alireza Beiranvand (IRN)", "Alireza Jahanbakhsh (IRN)", "Alisher Odilov (UZB)",
+  "Alisson (BRA)", "Alistair Johnston (CAN)", "Almoez Ali (QAT)", "Alphonso Davies (CAN)",
+  "Altay Bayindir (TUR)", "Álvaro Fidalgo (MEX)", "Álvaro Montero (COL)", "Amad Diallo (CIV)",
+  "Amadou Onana (BEL)", "Amar Dedic (BIH)", "Amar Memic (BIH)", "Amer Jamous (JOR)",
+  "Amine Gouiri (ALG)", "Amir Al-Ammari (IRQ)", "Amir Hadziahmetovic (BIH)", "Amir Murillo (PAN)",
+  "Amirhossein Hosseinzadeh (IRN)", "Anas Badawi (JOR)", "Anass Salah-Eddine (MAR)", "Andreas Schjelderup (NOR)",
+  "Andrej Kramaric (CRO)", "Andrés Andrade (PAN)", "Andrés Cubas (PAR)", "Andy Robertson (ESC)",
+  "Ange-Yoan Bonny (CIV)", "Ángelo Preciado (ECU)", "Angelo Stiller (ALE)", "Angus Gunn (ESC)",
+  "Aníbal Godoy (PAN)", "Anis Ben Slimane (TUN)", "Anis Hadj Moussa (ALG)", "Ante Budimir (CRO)",
+  "Anthony Elanga (SUE)", "Anthony Gordon (ING)", "Anthony Ralston (ESC)", "Anthony Valencia (ECU)",
+  "Antoine Mendy (SEN)", "Antoine Semenyo (GHA)", "Antonee Robinson (USA)", "Antonio Nusa (NOR)",
+  "Antonio Rüdiger (ALE)", "Antonio Sanabria (PAR)", "Ao Tanaka (JAP)", "Aqtay Abdallah (EGI)",
+  "Ar'jany Martha (CUW)", "Arda Güler (TUR)", "Ardon Jashari (SUI)", "Aria Yousefi (IRN)",
+  "Armando González (MEX)", "Armando Obispo (CUW)", "Armin Gigovic (BIH)", "Arthur Masuaku (COD)",
+  "Arthur Theate (BEL)", "Assane Diao (SEN)", "Assim Madibo (QAT)", "Atakan Karazor (TUR)",
+  "Aubrey Modiba (RSA)", "Augustine Boakye (GHA)", "Aurèle Amenda (SUI)", "Aurélien Tchouaméni (FRA)",
+  "Auston Trusty (USA)", "Avazbek Ulmasaliev (UZB)", "Awer Mabil (AUS)", "Axel Tuanzebe (COD)",
+  "Axel Witsel (BEL)", "Ayase Ueda (JAP)", "Ayman Yahya (KSA)", "Aymen Dahmen (TUN)",
+  "Aymen Hussein (IRQ)", "Aymeric Laporte (ESP)", "Ayoub Al-Alawi (QAT)", "Ayoub El Kaabi (MAR)",
+  "Ayoube Amaimouni (MAR)", "Ayumu Seko (JAP)", "Ayyoub Bouaddi (MAR)", "Azarias Londoño (PAN)",
+  "Aziz Behich (AUS)", "Azizjon Ganiev (UZB)", "Azzedine Ounahi (MAR)", "Baba Abdul Rahman (GHA)",
+  "Bae Jun-Ho (KOR)", "Bamba Dieng (SEN)", "Bara Sapoko Ndiaye (SEN)", "Baris Alper Yilmaz (TUR)",
+  "Bart Verbruggen (PBA)", "Bazoumana Touré (CIV)", "Ben Gannon-Doak (ESC)", "Ben Old (NZL)",
+  "Ben Waine (NZL)", "Benjamin Asare (GHA)", "Benjamin Nygren (SUE)", "Benjamin Tahirovic (BIH)",
+  "Bernardo Silva (POR)", "Besfort Zeneli (SUE)", "Bilal El Khannouss (MAR)", "Billy Gilmour (ESC)",
+  "Borja Iglesias (ESP)", "Botirali Ergashev (UZB)", "Bradley Barcola (FRA)", "Bradley Cross (RSA)",
+  "Brahim Díaz (MAR)", "Braian Ojeda (PAR)", "Brandley Kuwas (CUW)", "Brandon Mechele (BEL)",
+  "Brandon Thomas-Asante (GHA)", "Breel Embolo (SUI)", "Bremer (BRA)", "Brenden Aaronson (USA)",
+  "Brian Brobbey (PBA)", "Brian Cipenga (COD)", "Brian Gutiérrez (MEX)", "Brian Rodríguez (URU)",
+  "Brice Samba (FRA)", "Bruno Fernandes (POR)", "Bruno Guimarães (BRA)", "Bukayo Saka (ING)",
+  "Caglar Söyüncü (TUR)", "Caleb Yirenkyi (GHA)", "Callan Elliot (NZL)", "Callum McCowatt (NZL)",
+  "Cameron Burgess (AUS)", "Cameron Devlin (AUS)", "Camilo Vargas (COL)", "Can Uzun (TUR)",
+  "Carl Fred Sainté (HAI)", "Carl Starfelt (SUE)", "Carlens Arcus (HAI)", "Carlos Acevedo (MEX)",
+  "Carlos Andrés Gómez (COL)", "Carlos Harvey (PAN)", "Carney Chukwuemeka (AUT)", "Casemiro (BRA)",
+  "Cecilio Waterman (PAN)", "Cédric Bakambu (COD)", "Cedric Itten (SUI)", "César Blackman (PAN)",
+  "César Huerta (MEX)", "César Montes (MEX)", "César Samudio (PAN)", "César Yanis (PAN)",
+  "Chadi Riad (MAR)", "Chancel Mbemba (COD)", "Charles De Ketelaere (BEL)", "Charles Pickel (COD)",
+  "Ché Adams (ESC)", "Chemsdine Talbi (MAR)", "Cherif Ndiaye (SEN)", "Cho Kyu-Sung (KOR)",
+  "Chris Brady (USA)", "Chris Richards (USA)", "Chris Wood (NZL)", "Christ Inao Oulaï (CIV)",
+  "Christian Fassnacht (SUI)", "Christian Pulisic (USA)", "Christoph Baumgartner (AUT)", "Christopher Bonsu Baah (GHA)",
+  "CJ dos Santos (CPV)", "Clément Akpa (CIV)", "Cody Gakpo (PBA)", "Connor Metcalfe (AUS)",
+  "Craig Gordon (ESC)", "Cristian Martínez (PAN)", "Cristian Roldan (USA)", "Cristian Romero (ARG)",
+  "Cristian Volpato (AUS)", "Cristiano Ronaldo (POR)", "Crysencio Summerville (PBA)", "Cucho Hernández (COL)",
+  "Cyle Larin (CAN)", "Daichi Kamada (JAP)", "Dailon Livramento (CPV)", "Daizen Maeda (JAP)",
+  "Damián Bobadilla (PAR)", "Dan Burn (ING)", "Dan Ndoye (SUI)", "Dani Olmo (ESP)",
+  "Danial Eiri (IRN)", "Daniel Muñoz (COL)", "Daniel Svensson (SUE)", "Danilo (BRA)",
+  "Danilo Santos (BRA)", "Danley Jean Jacques (HAI)", "Darwin Núñez (URU)", "David Affengruber (AUT)",
+  "David Alaba (AUT)", "David Doudera (CHE)", "David Jurásek (CHE)", "David Møller Wolfe (NOR)",
+  "David Ospina (COL)", "David Raum (ALE)", "David Raya (ESP)", "David Zima (CHE)",
+  "Davinson Sánchez (COL)", "Dayne St. Clair (CAN)", "Dayot Upamecano (FRA)", "Dean Henderson (ING)",
+  "Declan Rice (ING)", "Deiver Machado (COL)", "Denil Castillo (ECU)", "Denis Visinsky (CHE)",
+  "Denis Zakaria (SUI)", "Deniz Undav (ALE)", "Dennis Dargahi (IRN)", "Dennis Hadzikadunic (BIH)",
+  "Denzel Dumfries (PBA)", "Derek Cornelius (CAN)", "Deroy Duarte (CPV)", "Derrick Etienne (HAI)",
+  "Desiré Doué (FRA)", "Deveron Fonville (CUW)", "Diego Gómez (PAR)", "Diego Moreira (BEL)",
+  "Diney (CPV)", "Diogo Costa (POR)", "Diogo Dalot (POR)", "Djed Spence (ING)",
+  "Djibril Sow (SUI)", "Dodi Lukebakio (BEL)", "Dom Hyam (ESC)", "Dominik Kotarski (CRO)",
+  "Dominik Livakovic (CRO)", "Dominique Simon (HAI)", "Don Deedson Louicius (HAI)", "Donyell Malen (PBA)",
+  "Dostonbek Khamdamov (UZB)", "Douglas Santos (BRA)", "Duckens Nazon (HAI)", "Duje Caleta-Car (CRO)",
+  "Duke Lacroix (HAI)", "Dylan Batubinsika (COD)", "Dylan Bronn (TUN)", "Dzenis Burnic (BIH)",
+  "Eberechi Eze (ING)", "Éderson (BRA)", "Edgardo Fariña (PAN)", "Edin Dzeko (BIH)",
+  "Edmílson Junior (QAT)", "Edo Kayembe (COD)", "Édouard Mendy (SEN)", "Edson Álvarez (MEX)",
+  "Egil Selvik (NOR)", "Ehsan Haddad (JOR)", "Ehsan Hajsafi (IRN)", "El Hadji Malick Diouf (SEN)",
+  "El Mahdi Soliman (EGI)", "Eldor Shomurodov (UZB)", "Eli Just (NZL)", "Elias Achouri (TUN)",
+  "Elias Saad (TUN)", "Elisha Owusu (GHA)", "Elliot Anderson (ING)", "Elliot Stroud (SUE)",
+  "Ellyes Skhiri (TUN)", "Eloy Room (CUW)", "Elye Wahi (CIV)", "Emam Ashour (EGI)",
+  "Emil Holm (SUE)", "Emiliano Martínez (ARG)", "Emiliano Martínez (URU)", "Emmanuel Agbadou (CIV)",
+  "Endrick (BRA)", "Enner Valencia (ECU)", "Enzo Fernández (ARG)", "Eray Cömert (SUI)",
+  "Eren Elmali (TUR)", "Éric Davis (PAN)", "Eric García (ESP)", "Erik Lira (MEX)",
+  "Erik Smith (SUE)", "Erling Haaland (NOR)", "Ermedin Demirovic (BIH)", "Ermin Mahmic (BIH)",
+  "Ernest Nuamah (GHA)", "Ersin Destanoglu (TUR)", "Esmir Bajraktarevic (BIH)", "Evan Ndicka (CIV)",
+  "Evann Guessand (CIV)", "Evidence Makgopa (RSA)", "Exequiel Palacios (ARG)", "Ezri Konsa (ING)",
+  "Fabián Balbuena (PAR)", "Fabian Rieder (SUI)", "Fabián Ruiz (ESP)", "Fabinho (BRA)",
+  "Facundo Medina (ARG)", "Facundo Pellistri (URU)", "Fahad Talib (IRQ)", "Farès Chaïbi (ALG)",
+  "Fares Ghedjemis (ALG)", "Farrukh Sayfiev (UZB)", "Federico Valverde (URU)", "Federico Viñas (URU)",
+  "Felix Nmecha (ALE)", "Félix Torres (ECU)", "Feras Al Brikan (KSA)", "Ferdi Kadioglu (TUR)",
+  "Fernando Muslera (URU)", "Ferran Torres (ESP)", "Fidel Escobar (PAN)", "Finlay Curtis (ESC)",
+  "Finn Surman (NZL)", "Firas Chaouat (TUN)", "Fiston Mayele (COD)", "Florian Grillitsch (AUT)",
+  "Florian Wiegele (AUT)", "Florian Wirtz (ALE)", "Folarin Balogun (USA)", "Francis De Vries (NZL)",
+  "Francisco Conceição (POR)", "Francisco Trincão (POR)", "Franck Kessié (CIV)", "Frans Putros (IRQ)",
+  "Frantzdy Pierrot (HAI)", "Fredrik André Bjørkan (NOR)", "Fredrik Aursnes (NOR)", "Frenkie de Jong (PBA)",
+  "Gabriel Avalos (PAR)", "Gabriel Gudmundsson (SUE)", "Gabriel Magalhães (BRA)", "Gabriel Martinelli (BRA)",
+  "Gaël Kakuta (COD)", "Garry Rodrigues (CPV)", "Gastón Olveira (PAR)", "Gavi (ESP)",
+  "Gedeon Kalulu (COD)", "George Hirst (ESC)", "Gerónimo Rulli (ARG)", "Gervane Kastaneer (CUW)",
+  "Gessime Yassine (MAR)", "Ghislain Konan (CIV)", "Gideon Mensah (GHA)", "Gilberto Mora (MEX)",
+  "Gilson Benchimol (CPV)", "Gio Reyna (USA)", "Giorgian De Arrascaeta (URU)", "Giovani Lo Celso (ARG)",
+  "Giuliano Simeone (ARG)", "Godfried Roemeratoe (CUW)", "Gonçalo Guedes (POR)", "Gonçalo Inacio (POR)",
+  "Gonçalo Ramos (POR)", "Gonzalo Montiel (ARG)", "Gonzalo Plata (ECU)", "Gonzalo Valle (ECU)",
+  "Granit Xhaka (SUI)", "Grant Hanley (ESC)", "Gregor Kobel (SUI)", "Guela Doué (CIV)",
+  "Guillermo Martínez (MEX)", "Guillermo Ochoa (MEX)", "Guillermo Varela (URU)", "Gustaf Lagerbielke (SUE)",
+  "Gustaf Nilsson (SUE)", "Gustavo Caballero (PAR)", "Gustavo Gómez (PAR)", "Gustavo Puerta (COL)",
+  "Gustavo Velázquez (PAR)", "Guus Til (PBA)", "Habib Diarra (SEN)", "Hadj Mahmoud (TUN)",
+  "Haissem Hassan (EGI)", "Haji Wright (USA)", "Hakan Çalhanoglu (TUR)", "Hamdy Fathy (EGI)",
+  "Hamza Abdelkarim (EGI)", "Hannes Delcroix (HAI)", "Hannibal Mejbri (TUN)", "Hans Vanaken (BEL)",
+  "Haris Tabakovic (BIH)", "Harry Kane (ING)", "Harry Souttar (AUS)", "Hassan Al-Haydos (QAT)",
+  "Hassan Kadesh (KSA)", "Hassan Tambakti (KSA)", "Hazem Mastouri (TUN)", "Helio Varela (CPV)",
+  "Henrik Falchener (NOR)", "Hernán Galíndez (ECU)", "Hicham Boudaoui (ALG)", "Hiroki Ito (JAP)",
+  "Hjalmar Ekdal (SUE)", "Hossam Abdelmaguid (EGI)", "Hossein Hosseini (IRN)", "Hossein Kanaani (IRN)",
+  "Houssem Aouar (ALG)", "Hugo Sochurek (CHE)", "Husam Abu Dahab (JOR)", "Hussein Ali (IRQ)",
+  "Hwang Hee-Chan (KOR)", "Hwang In-Beom (KOR)", "Ibrahim Adel (EGI)", "Ibrahim Bayesh (IRQ)",
+  "Ibrahim Maza (ALG)", "Ibrahim Mbaye (SEN)", "Ibrahim Sabra (JOR)", "Ibrahim Sadeh (JOR)",
+  "Ibrahim Sangaré (CIV)", "Ibrahima Konaté (FRA)", "Ibrohimkhalil Yuldoshev (UZB)", "Idrissa Gana Gueye (SEN)",
+  "Igor Matanovic (CRO)", "Igor Thiago (BRA)", "Ilay Camara (SEN)", "Iliman Ndiaye (SEN)",
+  "Ime Okon (RSA)", "Iñaki Williams (GHA)", "Iqraam Rayners (RSA)", "Irfan Can Kahveci (TUR)",
+  "Isak Hien (SUE)", "Isidro Pitta (PAR)", "Ismael Díaz (PAN)", "Ismaël Gharbi (TUN)",
+  "Ismaël Koné (CAN)", "Ismael Saibari (MAR)", "Ismail Jakobs (SEN)", "Ismail Yüksek (TUR)",
+  "Ismaïla Sarr (SEN)", "Israel Reyes (MEX)", "Issa Diop (MAR)", "Issa Laye (QAT)",
+  "Ivan Basic (BIH)", "Ivan Perisic (CRO)", "Ivan Sunjic (BIH)", "Ivan Toney (ING)",
+  "Ivor Pandur (CRO)", "Jack Hendry (ESC)", "Jackson Irvine (AUS)", "Jackson Porozo (ECU)",
+  "Jacob Italiano (AUS)", "Jacob Shaffelburg (CAN)", "Jacob Widell Zetterstrom (SUE)", "Jakhongir Urozov (UZB)",
+  "Jalal Hassan (IRQ)", "Jaloliddin Masharipov (UZB)", "Jamal Musiala (ALE)", "James Rodríguez (COL)",
+  "James Trafford (ING)", "Jamie Leweling (ALE)", "Jaminton Campaz (COL)", "Jamiro Monteiro (CPV)",
+  "Jamshid Iskanderov (UZB)", "Jan Kuchta (CHE)", "Jan Paul van Hecke (PBA)", "Jaouen Hadjam (ALG)",
+  "Jarell Quansah (ING)", "Jaroslav Zeleny (CHE)", "Jason Geria (AUS)", "Jassim Gaber (QAT)",
+  "Jasurbek Jaloliddinov (UZB)", "Jayden Adams (RSA)", "Jean Michaël Seri (CIV)", "Jean-Kévin Duverne (HAI)",
+  "Jean-Philippe Mateta (FRA)", "Jean-Ricner Bellegarde (HAI)", "Jearl Margaritha (CUW)", "Jefferson Lerma (COL)",
+  "Jehad Thakri (KSA)", "Jens Castrop (KOR)", "Jens Petter Hauge (NOR)", "Jeremy Antonisse (CUW)",
+  "Jeremy Arévalo (ECU)", "Jérémy Doku (BEL)", "Jerome Opoku (GHA)", "Jesper Karlström (SUE)",
+  "Jesse Randall (NZL)", "Jesús Gallardo (MEX)", "Jhon Arias (COL)", "Jhon Córdoba (COL)",
+  "Jhon Lucumí (COL)", "Jindrich Stanek (CHE)", "Jiovany Ramos (PAN)", "Jo Hyun-Woo (KOR)",
+  "Jo Yu-Min (KOR)", "Joan García (ESP)", "João Cancelo (POR)", "João Félix (POR)",
+  "João Neves (POR)", "Joao Paulo (CPV)", "Joaquín Piquerez (URU)", "Joaquin Seys (BEL)",
+  "Joe Bell (NZL)", "Joe Scally (USA)", "Joel Ordóñez (ECU)", "Joel Waterman (CAN)",
+  "Johan Manzambi (SUI)", "Johan Mojica (COL)", "Johan Vásquez (MEX)", "John McGinn (ESC)",
+  "John Souttar (ESC)", "John Stones (ING)", "John Yeboah (ECU)", "Johny Placide (HAI)",
+  "Jonas Adjetey (GHA)", "Jonathan David (CAN)", "Jonathan Osorio (CAN)", "Jonathan Tah (ALE)",
+  "Jordan Ayew (GHA)", "Jordan Bos (AUS)", "Jordan Henderson (ING)", "Jordan Pickford (ING)",
+  "Jordy Alcívar (ECU)", "Jordy Caicedo (ECU)", "Jorge Carrascal (COL)", "Jorge Gutiérrez (PAN)",
+  "Jorge Sánchez (MEX)", "Jørgen Strand Larsen (NOR)", "Joris Kayembe (COD)", "Jorrel Hato (PBA)",
+  "Jose Canale (PAR)", "José Córdoba (PAN)", "José Fajardo (PAN)", "José Luis Rodríguez (PAN)",
+  "Jose Manuel López (ARG)", "José María Giménez (URU)", "José Sá (POR)", "Joseph Anang (GHA)",
+  "Joshua Brenet (CUW)", "Joshua Kimmich (ALE)", "Josip Stanisic (CRO)", "Josip Sutalo (CRO)",
+  "Josko Gvardiol (CRO)", "Josué Casimir (HAI)", "Josue Duverger (HAI)", "Jovane Cabral (CPV)",
+  "Jovo Lukic (BIH)", "Juan Caceres (PAR)", "Juan Camilo Portilla (COL)", "Juan Fernando Quintero (COL)",
+  "Juan Manuel Sanabria (URU)", "Juan Musso (ARG)", "Jude Bellingham (ING)", "Jules Koundé (FRA)",
+  "Julián Álvarez (ARG)", "Julián Quiñones (MEX)", "Julian Ryerson (NOR)", "Julio Enciso (PAR)",
+  "Juninho Bacuna (CUW)", "Júnior Alonso (PAR)", "Junnosuke Suzuki (JAP)", "Junya Ito (JAP)",
+  "Jürgen Locadia (CUW)", "Juriën Gaari (CUW)", "Jurriën Timber (PBA)", "Justin Kluivert (PBA)",
+  "Kaan Ayhan (TUR)", "Kai Havertz (ALE)", "Kai Trewin (AUS)", "Kaishu Sano (JAP)",
+  "Kalidou Koulibaly (SEN)", "Kamal Deen Sulemana (GHA)", "Kamogelo Sebelebele (RSA)", "Karem Akturkoglu (TUR)",
+  "Karim Boudiaf (QAT)", "Karim Hafez (EGI)", "Keeto Thermoncy (HAI)", "Keisuke Goto (JAP)",
+  "Keisuke Osako (JAP)", "Keito Nakamura (JAP)", "Kelvin Pires (CPV)", "Ken Sema (SUE)",
+  "Kenan Yildiz (TUR)", "Kendry Páez (ECU)", "Kenji Gorré (CUW)", "Kenny McLean (ESC)",
+  "Kento Shiogai (JAP)", "Kerim Alajbegovic (BIH)", "Kevin Castaño (COL)", "Kevin Danso (AUT)",
+  "Kevin De Bruyne (BEL)", "Kevin Felida (CUW)", "Kevin Pina (CPV)", "Kevin Rodríguez (ECU)",
+  "Kevin Yakob (IRQ)", "Khalid Al Ghannam (KSA)", "Khalil Ayari (TUN)", "Khojiakbar Alijonov (UZB)",
+  "Khuliso Mudau (RSA)", "Khulumani Ndamane (RSA)", "Kieran Tierney (ESC)", "Kim Jin-Kyu (KOR)",
+  "Kim Min-Jae (KOR)", "Kim Moon-Hwan (KOR)", "Kim Seung-Gyu (KOR)", "Kim Tae-Hyun (KOR)",
+  "Knosinathi Sibisi (RSA)", "Ko Itakura (JAP)", "Kobbie Mainoo (ING)", "Kojo Oppong Peprah (GHA)",
+  "Koki Ogawa (JAP)", "Koni De Winter (BEL)", "Konrad Laimer (AUT)", "Kosta Barbarouses (NZL)",
+  "Krépin Diatta (SEN)", "Kristian Thorstvedt (NOR)", "Kristijan Jakic (CRO)", "Kristoffer Ajer (NOR)",
+  "Kristoffer Nordfeldt (SUE)", "Kuvondik Ruziev (UZB)", "Kwasi Sibo (GHA)", "Kylian Mbappé (FRA)",
+  "Lachlan Bayliss (NZL)", "Ladislav Krejcí (CHE)", "Lamine Camara (SEN)", "Lamine Yamal (ESP)",
+  "Laros Duarte (CPV)", "Lautaro Martínez (ARG)", "Lawrence Ati-Zigi (GHA)", "Lawrence Shankland (ESC)",
+  "Leandro Bacuna (CUW)", "Leandro Paredes (ARG)", "Leandro Trossard (BEL)", "Lee Dong-Gyeong (KOR)",
+  "Lee Han-Beom (KOR)", "Lee Jae-Sung (KOR)", "Lee Kang-In (KOR)", "Lee Ki-Hyeok (KOR)",
+  "Lee Tae-Seok (KOR)", "Lennart Karl (ALE)", "Lenny Joseph (HAI)", "Leo Østigard (NOR)",
+  "Léo Pereira (BRA)", "Leon Goretzka (ALE)", "Leonardo Balerdi (ARG)", "Leroy Sané (ALE)",
+  "Leverton Pierre (HAI)", "Lewis Ferguson (ESC)", "Liam Kelly (ESC)", "Liam Millar (CAN)",
+  "Liberato Cacace (NZL)", "Lionel Messi (ARG)", "Lionel Mpasi (COD)", "Lisandro Martínez (ARG)",
+  "Livano Comenencia (CUW)", "Logan Costa (CPV)", "Luc de Fougerolles (CAN)", "Luca Jaquez (SUI)",
+  "Luca Zidane (ALG)", "Lucas Bergvall (SUE)", "Lucas Digne (FRA)", "Lucas Hernández (FRA)",
+  "Lucas Herrington (AUS)", "Lucas Mendes (QAT)", "Lucas Paquetá (BRA)", "Luis Chávez (MEX)",
+  "Luis Díaz (COL)", "Luis Mejía (PAN)", "Luis Romo (MEX)", "Luis Suárez (COL)",
+  "Luiz Henrique (BRA)", "Luka Modric (CRO)", "Luka Sucic (CRO)", "Luka Vuskovic (CRO)",
+  "Lukás Cerv (CHE)", "Lukás Hornícek (CHE)", "Lukás Provod (CHE)", "Lyle Foster (RSA)",
+  "Lyndon Dykes (ESC)", "Maghnes Akliouche (FRA)", "Mahmoud Abunada (QAT)", "Mahmoud Saber (EGI)",
+  "Mahmoud Trezeguet (EGI)", "Malick Thiaw (ALE)", "Malik Tillman (USA)", "Malo Gusto (FRA)",
+  "Mamadou Sarr (SEN)", "Manaf Younis (IRQ)", "Manu Koné (FRA)", "Manuel Akanji (SUI)",
+  "Manuel Neuer (ALE)", "Manuel Ugarte (URU)", "Marc Cucurella (ESP)", "Marc Guéhi (ING)",
+  "Marc Pubill (ESP)", "Marcel Sabitzer (AUT)", "Marcelo Flores (CAN)", "Marcio Rosa (CPV)",
+  "Marco Friedl (AUT)", "Marco Pasalic (CRO)", "Marcos Llorente (ESP)", "Marcus Pedersen (NOR)",
+  "Marcus Rashford (ING)", "Marcus Thuram (FRA)", "Marin Pongracic (CRO)", "Mario Pasalic (CRO)",
+  "Mark Flekken (PBA)", "Mark McKenzie (USA)", "Marko Arnautovic (AUT)", "Marko Farji (IRQ)",
+  "Marko Stamenic (NZL)", "Marquinhos (BRA)", "Marten de Roon (PBA)", "Martin Baturina (CRO)",
+  "Martin Erlic (CRO)", "Martin Expérience (HAI)", "Martin Ødegaard (NOR)", "Martin Zlomislic (BIH)",
+  "Martín Zubimendi (ESP)", "Marvin Keller (SUI)", "Marvin Senaya (GHA)", "Marwan Ateya (EGI)",
+  "Matej Kovár (CHE)", "Mateo Chávez (MEX)", "Mateo Kovacic (CRO)", "Matheus Cunha (BRA)",
+  "Matheus Nunes (POR)", "Mathew Leckie (AUS)", "Mathew Ryan (AUS)", "Mathías Olivera (URU)",
+  "Mathieu Choinière (CAN)", "Matias Fernandez-Pardo (BEL)", "Matías Galarza (PAR)", "Matías Viña (URU)",
+  "Mats Wieffer (PBA)", "Matt Freese (USA)", "Matt Garbett (NZL)", "Matt Turner (USA)",
+  "Matthieu Epolo (COD)", "Mattias Svanberg (SUE)", "Mauricio Magalhaes (PAR)", "Max Arfsten (USA)",
+  "Max Crocombe (NZL)", "Maxence Lacroix (FRA)", "Maxim De Cuyper (BEL)", "Maxime Crépeau (CAN)",
+  "Maximilian Beier (ALE)", "Maximiliano Araújo (URU)", "Mbekezeli Mbokazi (RSA)", "Mehdi Ghaedi (IRN)",
+  "Mehdi Torabi (IRN)", "Melvin Masstil (ALG)", "Memphis Depay (PBA)", "Merchas Doski (IRQ)",
+  "Merih Demiral (TUR)", "Mert Günok (TUR)", "Mert Müldür (TUR)", "Meschak Elia (COD)",
+  "Meshaal Barsham (QAT)", "Michael Boxall (NZL)", "Michael Gregoritsch (AUT)", "Michael Olise (FRA)",
+  "Michael Svoboda (AUT)", "Michael Woud (NZL)", "Michal Sadílek (CHE)", "Michel Aebischer (SUI)",
+  "Micky van de Ven (PBA)", "Miguel Almirón (PAR)", "Mike Maignan (FRA)", "Mike Penders (BEL)",
+  "Mikel Merino (ESP)", "Mikel Oyarzabal (ESP)", "Milad Mohammadi (IRN)", "Miles Robinson (USA)",
+  "Milos Degenek (AUS)", "Miro Muheim (SUI)", "Mohamed Abdelmonemn (EGI)", "Mohamed Al Owais (KSA)",
+  "Mohamed Alaa (EGI)", "Mohamed Amine Amoura (ALG)", "Mohamed Amine Ben Hamida (TUN)", "Mohamed Amine Tougai (ALG)",
+  "Mohamed El Shenawy (EGI)", "Mohamed Hany (EGI)", "Mohamed Kanno (KSA)", "Mohamed Koné (CIV)",
+  "Mohamed Salah (EGI)", "Mohamed Toure (AUS)", "Mohammad Abualnadi (JOR)", "Mohammad Ghorbani (IRN)",
+  "Mohammad Mohebi (IRN)", "Mohammed Abu Alshamat (KSA)", "Mohammed Abu Hashish (JOR)", "Mohammed Abu Zraiq (JOR)",
+  "Mohammed Al-Dawoud (JOR)", "Mohammed Mannai (QAT)", "Mohammed Muntari (QAT)", "Mohammed Waad (QAT)",
+  "Mohanad Ali (IRQ)", "Mohanad Lasheen (EGI)", "Mohannad Abu Taha (JOR)", "Moïse Bombito (CAN)",
+  "Moisés Caicedo (ECU)", "Moisés Ramírez (ECU)", "Mojmír Chytil (CHE)", "Montassar Talbi (TUN)",
+  "Morgan Rogers (ING)", "Mortadha Ben Ouanes (TUN)", "Morten Thorsby (NOR)", "Mory Diaw (SEN)",
+  "Mostafa Shobeir (EGI)", "Mostafa Ziko (EGI)", "Moteb Al Harbi (KSA)", "Mousa Al-Tamari (JOR)",
+  "Moussa Niakhaté (SEN)", "Moustapha Mbow (SEN)", "Moutaz Neffati (TUN)", "Mubarak Shannan (QAT)",
+  "Mukhammadkodir Hamraliev (UZB)", "Munir Kajoui (MAR)", "Musab Al Juwayr (KSA)", "Mustafa Saadoon (IRQ)",
+  "N'Golo Kanté (FRA)", "Nabil Bentaleb (ALG)", "Nabil Emad (EGI)", "Nadiem Amiri (ALE)",
+  "Nadir Benbouali (ALG)", "Nahuel Molina (ARG)", "Nando Pijnaker (NZL)", "Nasser Al Dawsari (KSA)",
+  "Nathan Aké (PBA)", "Nathan Ngoy (BEL)", "Nathan Patterson (ESC)", "Nathan Saliba (CAN)",
+  "Nathanaël Mbuku (COD)", "Nathaniel Brown (ALE)", "Nawaf Al Aqidi (KSA)", "Nawaf Boushal (KSA)",
+  "Nayef Aguerd (MAR)", "Neil El Aynaoui (MAR)", "Nélson Semedo (POR)", "Nestory Irankunda (AUS)",
+  "Neymar (BRA)", "Ngal'ayel Mukau (COD)", "Niall Mason (QAT)", "Nick Woltemade (ALE)",
+  "Nico Elvedi (SUI)", "Nico O'Reilly (ING)", "Nico Paz (ARG)", "Nico Schlotterbeck (ALE)",
+  "Nico Williams (ESP)", "Nicolás De La Cruz (URU)", "Nicolás González (ARG)", "Nicolas Jackson (SEN)",
+  "Nicolás Otamendi (ARG)", "Nicolas Pépé (CIV)", "Nicolas Raskin (BEL)", "Nicolas Seiwald (AUT)",
+  "Nicolás Tagliafico (ARG)", "Nidal Celik (BIH)", "Nihad Mujakic (BIH)", "Niko Sigur (CAN)",
+  "Nikola Katic (BIH)", "Nikola Moro (CRO)", "Nikola Vasilj (BIH)", "Nikola Vlasic (CRO)",
+  "Nilson Angulo (ECU)", "Nishan Velupillay (AUS)", "Nizar Al-Rashdan (JOR)", "Noa Lang (PBA)",
+  "Noah Okafor (SUI)", "Noah Sadiki (COD)", "Nodirbek Abdurazzokov (UZB)", "Noni Madueke (ING)",
+  "Noor Al-Rawabdeh (JOR)", "Nour Bani Attiah (JOR)", "Noussair Mazraoui (MAR)", "Nuno da Costa (CPV)",
+  "Nuno Mendes (POR)", "Obed Vargas (MEX)", "Odeh Al-Fakhouri (JOR)", "Odiljon Khamrobekov (UZB)",
+  "Odilon Kossounou (CIV)", "Oh Hyun-Kyu (KOR)", "Oliver Baumann (ALE)", "Ollie Watkins (ING)",
+  "Olwethu Makhanya (RSA)", "Omar Alderete (PAR)", "Omar Marmoush (EGI)", "Omar Rekik (TUN)",
+  "Omid Noorafkan (IRN)", "Orbelín Pineda (MEX)", "Ørjan Nyland (NOR)", "Orkun Kökçü (TUR)",
+  "Orlando Gill (PAR)", "Orlando Mosquera (PAN)", "Oscar Bobb (NOR)", "Osman Hadzikic (BIH)",
+  "Oston Urunov (UZB)", "Oswin Appollis (RSA)", "Otabek Shukurov (UZB)", "Oumar Diakité (CIV)",
+  "Ousmane Diomande (CIV)", "Oussama Benbot (ALG)", "Owen Goodman (CAN)", "Ozan Kabak (TUR)",
+  "Paik Seung-Ho (KOR)", "Pape Gueye (SEN)", "Pape Matar Sarr (SEN)", "Parfait Guiagon (CIV)",
+  "Park Jin-Seop (KOR)", "Pascal Gross (ALE)", "Pathé Ciss (SEN)", "Patrick Beach (AUS)",
+  "Patrick Berg (NOR)", "Patrick Pentz (AUT)", "Patrick Wimmer (AUT)", "Patrik Schick (CHE)",
+  "Pau Cubarsí (ESP)", "Paul Izzo (AUS)", "Paul Okon-Engstler (AUS)", "Paul Reverson (GHA)",
+  "Paul Wanner (AUT)", "Pavel Sulc (CHE)", "Payam Niazmand (IRN)", "Pedri (ESP)",
+  "Pedro Miguel (QAT)", "Pedro Neto (POR)", "Pedro Porro (ESP)", "Pedro Vite (ECU)",
+  "Pervis Estupiñán (ECU)", "Petar Musa (CRO)", "Petar Sucic (CRO)", "Philipp Lienhart (AUT)",
+  "Philipp Mwene (AUT)", "Pico (CPV)", "Piero Hincapié (ECU)", "Promise David (CAN)",
+  "Quinten Timber (PBA)", "Raed Chikhaoui (TUN)", "Rafael Leão (POR)", "Rafik Belghali (ALG)",
+  "Rajaei Ayed (JOR)", "Rami Rabia (EGI)", "Ramin Rezaeian (IRN)", "Ramiz Zerrouki (ALG)",
+  "Ramón Sosa (PAR)", "Ramy Bensebaini (ALG)", "Rani Khedira (TUN)", "Raphinha (BRA)",
+  "Raúl Jiménez (MEX)", "Raúl Rangel (MEX)", "Rayan (BRA)", "Rayan Ait Nouri (ALG)",
+  "Rayan Cherki (FRA)", "Rayan Elloumi (TUN)", "Rebin Sulaka (IRQ)", "Redouane Halhal (MAR)",
+  "Reece James (ING)", "Relebohile Mofokeng (RSA)", "Remo Freuler (SUI)", "Renato Veiga (POR)",
+  "Ricardo Adé (HAI)", "Ricardo Goss (RSA)", "Ricardo Pepi (USA)", "Ricardo Rodríguez (SUI)",
+  "Ricardo Velho (POR)", "Richard Ríos (COL)", "Richie Laryea (CAN)", "Riechedly Bazoer (CUW)",
+  "Ritsu Doan (JAP)", "Riyad Mahrez (ALG)", "Roberto Alvarado (MEX)", "Roberto Fernández (PAR)",
+  "Robin Hranác (CHE)", "Robin Risser (FRA)", "Robin Roefs (PBA)", "Roderick Miller (PAN)",
+  "Rodri (ESP)", "Rodrigo Aguirre (URU)", "Rodrigo Bentancur (URU)", "Rodrigo De Paul (ARG)",
+  "Rodrigo Zalazar (URU)", "Roger Ibañez (BRA)", "Romano Schmid (AUT)", "Romelu Lukaku (BEL)",
+  "Ronald Araújo (URU)", "Ronwen Williams (RSA)", "Roshon van Eijma (CUW)", "Ross Stewart (ESC)",
+  "Rouzbeh Cheshmi (IRN)", "Rúben Dias (POR)", "Rúben Neves (POR)", "Ruben Providence (HAI)",
+  "Rubén Vargas (SUI)", "Rui Silva (POR)", "Rustamjon Ashurmatov (UZB)", "Ryan Christie (ESC)",
+  "Ryan Gravenberch (PBA)", "Ryan Mendes (CPV)", "Ryan Thomas (NZL)", "Sabri Ben Hessen (TUN)",
+  "Sadio Mané (SEN)", "Saed Al-Rosna (JOR)", "Saeid Ezatolahi (IRN)", "Salah Zakaria (QAT)",
+  "Saleem Obaid (JOR)", "Saleh Al Shehri (KSA)", "Saleh Hardani (IRN)", "Salem Al Dawsari (KSA)",
+  "Salih Özcan (TUR)", "Saman Ghoddos (IRN)", "Samed Bazdar (BIH)", "Samet Akaydin (TUR)",
+  "Samir Chergui (ALG)", "Samir El Mourabet (MAR)", "Samú Costa (POR)", "Samuel Moutoussamy (COD)",
+  "Samukele Kabini (RSA)", "Sander Berge (NOR)", "Sander Tangvik (NOR)", "Santiago Arias (COL)",
+  "Santiago Bueno (URU)", "Santiago Gimenez (MEX)", "Santiago Mele (URU)", "Sardorbek Rakhmonov (UZB)",
+  "Sarpreet Singh (NZL)", "Sasa Kalajdzic (AUT)", "Saud Abdulhamid (KSA)", "Scott McKenna (ESC)",
+  "Scott McTominay (ESC)", "Sead Kolasinac (BIH)", "Sebastian Berhalter (USA)", "Sebastián Cáceres (URU)",
+  "Sebastian Tounekti (TUN)", "Seko Fofana (CIV)", "Senne Lammens (BEL)", "Seol Young-Woo (KOR)",
+  "Sergiño Dest (USA)", "Sergio Rochet (URU)", "Shahriyar Moghanloo (IRN)", "Sherel Floranus (CUW)",
+  "Sherzod Esanov (UZB)", "Shogo Taniguchi (JAP)", "Shoka Khalilzadeh (IRN)", "Shurandy Sambo (CUW)",
+  "Sidny Lopes Cabral (CPV)", "Silvan Widmer (SUI)", "Simon Adingra (CIV)", "Simon Banza (COD)",
+  "Sipho Chaine (RSA)", "Sofyan Amrabat (MAR)", "Solomon Agbasi (GHA)", "Son Heung-Min (KOR)",
+  "Sondre Langås (NOR)", "Song Bum-Keun (KOR)", "Sontje Hansen (CUW)", "Soufiane Rahimi (MAR)",
+  "Sphephelo Sithole (RSA)", "Stefan Posch (AUT)", "Stepán Chaloupek (CHE)", "Stephen Eustáquio (CAN)",
+  "Steve Kapuadi (COD)", "Steven Moreira (CPV)", "Stjepan Radeljic (BIH)", "Stopira (CPV)",
+  "Sultan Al Brake (QAT)", "Sultan Mandash (KSA)", "Taha Ali (SUE)", "Tahith Chong (CUW)",
+  "Tahsin Mohammed (QAT)", "Tajon Buchanan (CAN)", "Takefusa Kubo (JAP)", "Takehiro Tomiyasu (JAP)",
+  "Tani Oluwaseyi (CAN)", "Tarek Alaa (EGI)", "Taremi (IRN)", "Tarik Muharemovic (BIH)",
+  "Teboho Mokoena (RSA)", "Telmo Arcanjo (CPV)", "Tete Yengi (AUS)", "Teun Koopmeiners (PBA)",
+  "Thabang Matuludi (RSA)", "Thalente Mbatha (RSA)", "Thapelo Maseko (RSA)", "Thelo Aasgaard (NOR)",
+  "Themba Zwane (RSA)", "Théo Bongonda (COD)", "Theo Hernández (FRA)", "Thiago Almada (ARG)",
+  "Thibaut Courtois (BEL)", "Thomas Meunier (BEL)", "Thomas Partey (GHA)", "Tijjani Reijnders (PBA)",
+  "Tim Payne (NZL)", "Tim Ream (USA)", "Tim Weah (USA)", "Timothy Castagne (BEL)",
+  "Timothy Fayulu (COD)", "Tino Livramento (ING)", "Tomás Araújo (POR)", "Tomás Chory (CHE)",
+  "Tomás Holes (CHE)", "Tomás Rodríguez (PAN)", "Tomás Soucek (CHE)", "Tommy Smith (NZL)",
+  "Tomoki Hayakawa (JAP)", "Toni Fruk (CRO)", "Torbjørn Heggem (NOR)", "Trevor Doornbusch (CUW)",
+  "Tshepang Moremi (RSA)", "Tsuyoshi Watanabe (JAP)", "Tyler Adams (USA)", "Tyler Bindon (NZL)",
+  "Tyrese Noslin (CUW)", "Tyrick Bodak (CUW)", "Ugurcan Çakir (TUR)", "Um Ji-Sung (KOR)",
+  "Umarali Rakhmonaliev (UZB)", "Umarbek Eshmurodov (UZB)", "Unai Simón (ESP)", "Utkir Yusupov (UZB)",
+  "Valentín Barco (ARG)", "Victor Lindelöf (SUE)", "Víctor Muñoz (ESP)", "Viktor Gyökeres (SUE)",
+  "Viktor Johansson (SUE)", "Vinícius Júnior (BRA)", "Virgil van Dijk (PBA)", "Vitinha (POR)",
+  "Vladimír Coufal (CHE)", "Vladimír Darida (CHE)", "Vladimir Nazarov (UZB)", "Vozinha (CPV)",
+  "Wagner Pina (CPV)", "Waldemar Anton (ALE)", "Warren Zaïre-Emery (FRA)", "Wataru Endo (JAP)",
+  "Wesley (BRA)", "Weston McKennie (USA)", "Weverton (BRA)", "Wilfried Singo (CIV)",
+  "Wilguens Paugain (HAI)", "Willer Ditta (COL)", "William Saliba (FRA)", "Willian Pacho (ECU)",
+  "Willy Semedo (CPV)", "Wilson Isidor (HAI)", "Woodensky Pierre (HAI)", "Wout Weghorst (PBA)",
+  "Xaver Schlager (AUT)", "Yahia Fofana (CIV)", "Yaimar Medina (ECU)", "Yan Diomande (CIV)",
+  "Yan Valery (TUN)", "Yang Hyun-Jun (KOR)", "Yannick Semedo (CPV)", "Yasin Ayari (SUE)",
+  "Yasser Ibrahim (EGI)", "Yassin Fortuné (HAI)", "Yassine Bounou (MAR)", "Yassine Titraoui (ALG)",
+  "Yazan Al-Arab (JOR)", "Yazid Abulaila (JOR)", "Yehvann Diouf (SEN)", "Yéremy Pino (ESP)",
+  "Yerry Mina (COL)", "Yoane Wissa (COD)", "Yoel Bárcenas (PAN)", "Youri Tielemans (BEL)",
+  "Yousef Abu Al-Jazar (JOR)", "Yousef Qashi (JOR)", "Youssef Amyn (IRQ)", "Youssef Belammari (MAR)",
+  "Yuito Suzuki (JAP)", "Yukinari Sugawara (JAP)", "Yunus Akgün (TUR)", "Yusuf Abdurisag (QAT)",
+  "Yūto Nagatomo (JAP)", "Yvon Mvogo (SUI)", "Zaid Ismail (IRQ)", "Zaid Tahseen (IRQ)",
+  "Zakaria El Ouahdi (MAR)", "Zeki Amdouni (SUI)", "Zeki Çelik (TUR)", "Zeno Debast (BEL)",
+  "Zidane Iqbal (IRQ)", "Zinedine Belaid (ALG)", "Zion Suzuki (JAP)", "Ziyad Al Johani (KSA)",
 ].filter((v,i,a)=>a.indexOf(v)===i).sort();
 
 // Función para enriquecer/actualizar la lista desde football-data.org (gratuita, sin key)
@@ -191,8 +396,17 @@ const FASES_ELIM = [
   {id:'final',  label:'Final',                   pts:20, cruces:1},
 ];
 
+// Ventanas de carga de pronóstico (el cierre se aplica 12 hs antes del primer
+// partido de la fase). "semifinal" agrupa semis + 3er puesto + final en una sola carga.
+const FASES_ELIM_WIN = [
+  {id:'16avos',    label:'Dieciseisavos'},
+  {id:'8vos',      label:'Octavos'},
+  {id:'4tos',      label:'Cuartos'},
+  {id:'semifinal', label:'Semifinal + Final'},
+];
+
 let currentStep=1, adminLogged=false, currentTab='total', filtroActivo='';
-let allData={participantes:[],puntosEquipos:{},golesJugadores:{},resultadosElim:{},campeonFinal:'',fechaLimite:''};
+let allData={participantes:[],puntosEquipos:{},golesJugadores:{},resultadosElim:{},campeonFinal:'',fechaLimite:'',cierresElim:{}};
 
 // Goleadores elegidos en Step 4
 let golesElegidos=[];
@@ -212,9 +426,20 @@ window.addEventListener('load',()=>{
   buildTeamPickers();
   buildGoleadoresPickers();
   populateCampeonSelect();
-  loadDashboard();
+  loadDashboard().then(()=>{
+    // Una vez arrancado el Mundial (pasó la fecha límite), al entrar se muestra
+    // primero la Tabla de posiciones.
+    if(!window.__landingDecidida){
+      window.__landingDecidida=true;
+      if(new Date() >= getFechaLimite()){
+        showPage('dashboard', document.getElementById('navDashboard'));
+      }
+    }
+  });
   iniciarCountdown();
-  cargarJugadoresDesdeAPI(); // enriquece lista de jugadores si hay conexión
+  // La lista de jugadores ahora es fija y autoritativa (cargada desde
+  // Jugadoresmundial2026.json). NO se enriquece desde APIs externas para
+  // evitar que se pisen los nombres con datos incompletos/erróneos.
 });
 
 // ================================================================
@@ -593,19 +818,9 @@ function calcPuntos(p,tab){
 }
 
 function renderDashboard(){
-  const todos=[...(allData.participantes||[])];
-  todos.sort((a,b)=>calcPuntos(b,currentTab)-calcPuntos(a,currentTab));
-
-  const statBar=document.getElementById('statBar');
-  if(todos.length){
-    const lider=calcPuntos(todos[0],currentTab);
-    statBar.innerHTML=`
-      <div class="stat-item"><div class="stat-num">${todos.length}</div><div class="stat-label">Participantes</div></div>
-      <div class="stat-item"><div class="stat-num">${lider>=0?'+':''}${lider}</div><div class="stat-label">Puntaje líder</div></div>
-      <div class="stat-item"><div class="stat-num" style="font-size:16px;margin-top:4px">${allData.campeonFinal||'?'}</div><div class="stat-label">Campeón</div></div>`;
-  } else {
-    statBar.innerHTML='';
-  }
+  const todos=[...(allData.participantes||[])]
+    .sort((a,b)=>calcPuntos(b,currentTab)-calcPuntos(a,currentTab))
+    .slice(0,100); // máximo 100 registros en la tabla
 
   const filtro=filtroActivo.toLowerCase().trim();
   const tbody=document.getElementById('tablaBody');
@@ -615,14 +830,24 @@ function renderDashboard(){
     return;
   }
 
+  // Puntajes ya ordenados de mayor a menor
+  const scores=todos.map(p=>calcPuntos(p,currentTab));
+  const n=scores.length;
+  const maxScore=scores[0];
+  const minScore=scores[n-1];
+  const hasSpread=maxScore!==minScore; // si todos empatan no marcamos a nadie
+  // Líder/es: todos los que comparten el mejor puntaje.
+  // Últimos 4: las 4 peores posiciones, extendido a empates en el corte.
+  const loserCutoff=(n>=5 && hasSpread)?scores[n-4]:null;
+
   tbody.innerHTML=todos.map((p,i)=>{
-    const pts=calcPuntos(p,currentTab);
-    const rank=i+1;
-    let rankClass='rank-n';
-    if(rank===1)rankClass='rank-1';
-    else if(rank===2)rankClass='rank-2';
-    else if(rank===3)rankClass='rank-3';
-    else if(rank>todos.length-3)rankClass='rank-last';
+    const pts=scores[i];
+    const rank=scores.findIndex(s=>s===pts)+1; // empates comparten posición
+    const isLeader=hasSpread && n>=2 && pts===maxScore;
+    const isLoser=loserCutoff!==null && pts<=loserCutoff && !isLeader;
+    let rankClass='rank-n', rowClass='';
+    if(isLeader){rankClass='rank-1';rowClass='leader';}
+    else if(isLoser){rankClass='rank-last';rowClass='loser';}
     const initials=(p.nombre||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
     const hasCamp=allData.campeonFinal&&p.campeon&&p.campeon.trim()===allData.campeonFinal.trim();
     const ptsClass=pts>0?'pts-pos':pts<0?'pts-neg':'pts-zero';
@@ -630,31 +855,17 @@ function renderDashboard(){
     const isMatch=filtro&&nombre.toLowerCase().includes(filtro);
     const hidden=filtro&&!isMatch?'hidden-row':'';
     const hl=isMatch?'highlight':'';
-    return `<tr class="${hidden} ${hl}">
+    const crown=isLeader?' 👑':'';
+    return `<tr class="${hidden} ${rowClass} ${hl}">
       <td><div class="rank-badge ${rankClass}">${rank}</div></td>
       <td><div class="player-cell">
         <div class="avatar">${initials}</div>
-        <div><div class="player-name">${nombre}</div><div class="player-country">${p.pais||''}</div></div>
+        <div><div class="player-name">${nombre}${crown}</div><div class="player-country">${p.pais||''}</div></div>
       </div></td>
       <td style="text-align:right"><span class="pts ${ptsClass}">${pts>0?'+':''}${pts}</span></td>
       <td style="text-align:right;font-size:13px;color:var(--text-muted)">${p.campeon||'—'}${hasCamp?' 🏆':''}</td>
     </tr>`;
   }).join('');
-
-  if(todos.length>=4){
-    const ultimos=todos.slice(-3).reverse();
-    document.getElementById('zonaPeligro').style.display='block';
-    document.getElementById('zonaPeligroCards').innerHTML=ultimos.map((p,i)=>{
-      const pos=todos.length-i;
-      const initials=(p.nombre||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-      return `<div class="zona-card">
-        <div class="avatar" style="width:48px;height:48px;font-size:16px;margin:0 auto 10px">${initials}</div>
-        <div class="player-name" style="font-size:14px">${p.nombre||''}</div>
-        <div class="player-country" style="font-size:11px">${p.pais||''}</div>
-        <div class="zona-rank">🔥 #${pos}</div>
-      </div>`;
-    }).join('');
-  }
 }
 
 function filtrarTabla(val){
@@ -670,6 +881,199 @@ function showTab(tab,btn){
 }
 
 // ================================================================
+// ELIMINATORIAS — carga de pronósticos por fase (por email)
+// ================================================================
+let currentElimEmail='', currentElimPart=null, currentElimWin='', elimSel={}, elimCountdownTimer=null;
+
+function loadElimPage(){
+  // Refresca datos y, si ya estaba identificado, re-renderiza
+  fetch(CONFIG.SCRIPT_URL+'?action=getData')
+    .then(r=>r.json()).then(d=>{ if(d&&d.participantes) allData=d; })
+    .catch(()=>{})
+    .finally(()=>{ if(currentElimEmail) identificarElim(); });
+}
+
+function cr(clave){ return (allData.crucesElim||{})[clave] || {}; }
+
+function clavesDeVentana(win){
+  if(win==='16avos') return Array.from({length:16},(_,i)=>'16avos_'+(i+1));
+  if(win==='8vos')   return Array.from({length:8 },(_,i)=>'8vos_'+(i+1));
+  if(win==='4tos')   return Array.from({length:4 },(_,i)=>'4tos_'+(i+1));
+  if(win==='semifinal') return ['semis_1','semis_2','final_1','3ro_1'];
+  return [];
+}
+// Cruces que necesitan matchup conocido para que la ventana se considere "abierta"
+function clavesBaseVentana(win){
+  return win==='semifinal' ? ['semis_1','semis_2'] : clavesDeVentana(win);
+}
+
+function elimState(win){
+  const base=clavesBaseVentana(win);
+  const cruces=allData.crucesElim||{};
+  const known = base.length>0 && base.every(k=>cruces[k] && cruces[k].home && cruces[k].away);
+  const dl=(allData.deadlines||{})[win]||'';
+  const closed = dl ? (new Date() > new Date(dl)) : false;
+  return {known, dl, closed};
+}
+
+function identificarElim(){
+  const email=document.getElementById('elimEmail').value.trim().toLowerCase();
+  const err=document.getElementById('elimGateError');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    err.style.display='block'; err.textContent='⚠️ Ingresá un email válido.'; return;
+  }
+  const part=(allData.participantes||[]).find(p=>(p.email||'').toLowerCase().trim()===email);
+  if(!part){
+    err.style.display='block';
+    err.textContent='No encontramos ese email. Primero cargá tu pronóstico inicial en la pestaña ⚽ Pronósticos.';
+    document.getElementById('elimContent').innerHTML='';
+    return;
+  }
+  err.style.display='none';
+  currentElimEmail=email; currentElimPart=part;
+  renderElimContent(part);
+}
+
+function renderElimContent(part){
+  const cont=document.getElementById('elimContent');
+  if(!cont) return;
+  const open=FASES_ELIM_WIN.find(w=>{const s=elimState(w.id);return s.known && !s.closed;});
+  let html=`<div style="font-size:13px;color:var(--text-muted);margin-bottom:1rem">Hola <strong style="color:var(--verde)">${part.nombre||part.email||''}</strong> 👋</div>`;
+  if(open){
+    currentElimWin=open.id;
+    elimSel={};
+    clavesDeVentana(open.id).forEach(k=>{ if(part.picks && part.picks[k]) elimSel[k]=part.picks[k]; });
+    html+=`<div class="elim-win-title">${open.label} <span class="elim-badge open">Abierta</span></div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:.75rem">Cierra: <span id="elimDeadlineTxt">—</span> · faltan <span id="elimCountdown" style="color:var(--gold);font-weight:700">—</span></div>
+      <div id="elimFormArea">${buildElimFormInner(open.id)}</div>
+      <button class="btn btn-primary" style="margin-top:1rem;width:100%" onclick="submitElimPicks()">💾 Guardar pronóstico de ${open.label}</button>`;
+  } else {
+    currentElimWin='';
+    html+=`<div class="admin-card"><div class="admin-desc">Por ahora no hay ninguna fase abierta para cargar. La próxima ventana se habilita cuando se definan los cruces de la siguiente fase, y cierra 12 hs antes del primer partido.</div></div>`;
+  }
+  html+=renderElimResumen(part);
+  cont.innerHTML=html;
+  if(open) iniciarCountdownElim(open.id);
+}
+
+function buildElimFormInner(win){
+  if(win==='semifinal') return buildSemifinalForm();
+  return clavesDeVentana(win).map((k,idx)=>{
+    const c=cr(k);
+    return crucePickCard('Cruce '+(idx+1), k, c.home, c.away);
+  }).join('');
+}
+
+function crucePickCard(label, clave, home, away){
+  const sel=elimSel[clave]||'';
+  const btn=(team)=>`<button class="team-pick ${sel===team&&team?'sel':''}" ${team?`onclick="pickTeam('${clave}','${(team||'').replace(/'/g,"\\'")}')"`:'disabled'}>${team||'—'}</button>`;
+  return `<div class="cruce-card"><div class="cruce-label">${label}</div><div class="cruce-teams">${btn(home)}${btn(away)}</div></div>`;
+}
+
+function perdedorSemi(clave){
+  const c=cr(clave), w=elimSel[clave];
+  if(!w||!c.home||!c.away) return '';
+  return w===c.home ? c.away : c.home;
+}
+
+function buildSemifinalForm(){
+  const s1=cr('semis_1'), s2=cr('semis_2');
+  let html='';
+  html+=crucePickCard('Semifinal 1', 'semis_1', s1.home, s1.away);
+  html+=crucePickCard('Semifinal 2', 'semis_2', s2.home, s2.away);
+  const finalistas=[elimSel['semis_1'],elimSel['semis_2']].filter(Boolean);
+  if(finalistas.length===2){
+    html+=crucePickCard('Final — ¿Campeón? (1º)', 'final_1', finalistas[0], finalistas[1]);
+  } else {
+    html+=`<div class="cruce-card"><div class="cruce-label">Final — ¿Campeón? (1º)</div><div style="font-size:12px;color:var(--text-muted)">Elegí primero el ganador de cada semifinal.</div></div>`;
+  }
+  const perdedores=[perdedorSemi('semis_1'),perdedorSemi('semis_2')].filter(Boolean);
+  if(perdedores.length===2){
+    html+=crucePickCard('Tercer puesto (3º)', '3ro_1', perdedores[0], perdedores[1]);
+  } else {
+    html+=`<div class="cruce-card"><div class="cruce-label">Tercer puesto (3º)</div><div style="font-size:12px;color:var(--text-muted)">Se habilita al elegir los ganadores de las semis.</div></div>`;
+  }
+  html+=buildPodioResumen(finalistas);
+  return html;
+}
+
+function buildPodioResumen(finalistas){
+  const camp=elimSel['final_1']||'';
+  const sub = (finalistas.length===2 && camp) ? (finalistas.find(t=>t!==camp)||'') : '';
+  const tercero=elimSel['3ro_1']||'';
+  const perdedores=[perdedorSemi('semis_1'),perdedorSemi('semis_2')].filter(Boolean);
+  const cuarto = (perdedores.length===2 && tercero) ? (perdedores.find(t=>t!==tercero)||'') : '';
+  const row=(pos,team)=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(22,101,52,.2)"><span style="color:var(--text-muted)">${pos}</span><strong>${team||'—'}</strong></div>`;
+  return `<div class="cruce-card" style="margin-top:12px"><div class="cruce-label">Tu podio</div>
+    ${row('🥇 1º Campeón',camp)}${row('🥈 2º Subcampeón',sub)}${row('🥉 3º',tercero)}${row('4º',cuarto)}</div>`;
+}
+
+function pickTeam(clave, team){
+  elimSel[clave]=team;
+  if(currentElimWin==='semifinal') sanitizeSemifinal();
+  const area=document.getElementById('elimFormArea');
+  if(area) area.innerHTML=buildElimFormInner(currentElimWin);
+}
+
+function sanitizeSemifinal(){
+  const finalistas=[elimSel['semis_1'],elimSel['semis_2']].filter(Boolean);
+  if(!(finalistas.length===2 && finalistas.includes(elimSel['final_1']))) delete elimSel['final_1'];
+  const perdedores=[perdedorSemi('semis_1'),perdedorSemi('semis_2')].filter(Boolean);
+  if(!(perdedores.length===2 && perdedores.includes(elimSel['3ro_1']))) delete elimSel['3ro_1'];
+}
+
+function submitElimPicks(){
+  const win=currentElimWin;
+  if(!win) return;
+  // Re-chequeo de cierre del lado cliente
+  if(elimState(win).closed){ notify('La ventana de esta fase ya cerró.'); renderElimContent(currentElimPart); return; }
+  const req=clavesDeVentana(win);
+  const faltan=req.filter(k=>!elimSel[k]);
+  if(faltan.length){ notify('Completá todos los pronósticos de la fase antes de guardar.'); return; }
+  const picks={};
+  req.forEach(k=>picks[k]=elimSel[k]);
+  saveToSheet({action:'updatePicks', email:currentElimEmail, picks:picks, fase:win});
+  // Optimista: reflejar localmente
+  currentElimPart.picks=Object.assign({}, currentElimPart.picks||{}, picks);
+  Object.keys(picks).forEach(k=>currentElimPart['pick_'+k]=picks[k]);
+  notify('Pronóstico guardado ✓');
+  renderElimContent(currentElimPart);
+}
+
+function renderElimResumen(part){
+  let html='<div class="elim-win-title" style="font-size:18px;color:var(--text)">Estado de tus fases</div>';
+  FASES_ELIM_WIN.forEach(w=>{
+    const s=elimState(w.id);
+    let badge='pending', txt='Pendiente';
+    if(s.known && !s.closed){badge='open';txt='Abierta';}
+    else if(s.closed){badge='closed';txt='Cerrada';}
+    const claves=clavesDeVentana(w.id);
+    const cargados=claves.filter(k=>part.picks && part.picks[k]).length;
+    html+=`<div class="cruce-card"><div style="display:flex;justify-content:space-between;align-items:center">
+      <span><strong>${w.label}</strong> <span class="elim-badge ${badge}">${txt}</span></span>
+      <span style="font-size:12px;color:var(--text-muted)">${cargados}/${claves.length} cargados</span></div></div>`;
+  });
+  return html;
+}
+
+function iniciarCountdownElim(win){
+  if(elimCountdownTimer) clearInterval(elimCountdownTimer);
+  const dl=(allData.deadlines||{})[win];
+  const txtEl=document.getElementById('elimDeadlineTxt');
+  if(txtEl) txtEl.textContent = dl ? new Date(dl).toLocaleString('es-AR') : 'a definir';
+  const tick=()=>{
+    const el=document.getElementById('elimCountdown');
+    if(!el){ clearInterval(elimCountdownTimer); return; }
+    if(!dl){ el.textContent='—'; return; }
+    const diff=new Date(dl)-new Date();
+    if(diff<=0){ el.textContent='cerrada'; clearInterval(elimCountdownTimer); renderElimContent(currentElimPart); return; }
+    const d=Math.floor(diff/86400000), h=Math.floor(diff%86400000/3600000), m=Math.floor(diff%3600000/60000), s=Math.floor(diff%60000/1000);
+    el.textContent=`${d}d ${h}h ${m}m ${s}s`;
+  };
+  tick(); elimCountdownTimer=setInterval(tick,1000);
+}
+
+// ================================================================
 // ADMIN
 // ================================================================
 function showPage(page,btn){
@@ -680,8 +1084,9 @@ function showPage(page,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
-  btn.classList.add('active');
+  if(btn) btn.classList.add('active');
   if(page==='dashboard')loadDashboard();
+  if(page==='elim')loadElimPage();
 }
 
 // MEJORA: botón "Volver" en el overlay de login
@@ -711,6 +1116,7 @@ async function loadAdminData(){
   renderAdminPuntosFase();
   renderAdminEliminatorias();
   renderFechaLimiteAdmin();
+  renderDeadlinesElimAdmin();
 }
 
 // ---- ADMIN FECHA LÍMITE ----
@@ -747,6 +1153,51 @@ async function borrarFechaLimite(){
   allData.fechaLimite='';
   notify('Fecha límite eliminada ✓');
   renderFechaLimiteAdmin();
+}
+
+// ---- ADMIN FECHAS TOPE ELIMINATORIAS (fallback manual) ----
+function isoToLocalInput(iso){
+  if(!iso) return '';
+  const d = new Date(iso);
+  const offset = d.getTimezoneOffset()*60000;
+  return new Date(d-offset).toISOString().slice(0,16);
+}
+
+function renderDeadlinesElimAdmin(){
+  const cont = document.getElementById('deadlinesElimAdmin');
+  if(!cont) return;
+  const cierres = allData.cierresElim || {};
+  cont.innerHTML = FASES_ELIM_WIN.map(f=>`
+    <div class="result-row">
+      <span class="vs" style="min-width:120px">${f.label}</span>
+      <input type="datetime-local" id="dl_${f.id}" value="${isoToLocalInput(cierres[f.id])}"
+        style="flex:1;background:rgba(251,191,36,.05);border-color:rgba(251,191,36,.3);font-size:12px;padding:7px 10px">
+    </div>`).join('');
+}
+
+async function guardarDeadlinesElim(){
+  for(const f of FASES_ELIM_WIN){
+    const val = document.getElementById('dl_'+f.id).value;
+    const iso = val ? new Date(val).toISOString() : '';
+    await saveToSheet({action:'updateConfig',key:'cierre_'+f.id,value:iso});
+    allData.cierresElim[f.id] = iso;
+  }
+  const st = document.getElementById('deadlinesElimStatus');
+  st.textContent = '✅ Fechas tope guardadas';
+  st.style.color = 'var(--verde)';
+  notify('Fechas tope guardadas ✓');
+}
+
+async function borrarDeadlinesElim(){
+  for(const f of FASES_ELIM_WIN){
+    await saveToSheet({action:'updateConfig',key:'cierre_'+f.id,value:''});
+    allData.cierresElim[f.id] = '';
+  }
+  renderDeadlinesElimAdmin();
+  const st = document.getElementById('deadlinesElimStatus');
+  st.textContent = 'Volvió al cálculo automático (12 hs antes del primer partido de cada fase).';
+  st.style.color = 'var(--text-muted)';
+  notify('Volvió a automático ✓');
 }
 
 function renderAdminParticipantes(){
