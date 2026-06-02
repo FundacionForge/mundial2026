@@ -3,7 +3,7 @@
 // ================================================================
 const CONFIG = {
   SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwsCzzkQ-YyuzA7GA2aBE7z_u8Ok7XumuJZ44M0OuQe0Skadz_S30lq6cAgvvFDN7W6/exec',
-  ADMIN_PASS: 'mundial2026',
+  ADMIN_PASS: 'sifon26',
 };
 
 // Fecha del inicio del Mundial (cierre por defecto si no se configura otra)
