@@ -2,7 +2,7 @@
 // CONFIG — COMPLETAR ANTES DE PUBLICAR
 // ================================================================
 const CONFIG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyJvruSmzWtzB97nzy_GDLyGBDrvz7_eYbuEqxmOcahi3Oazzt3HJNPX6G2PgsDCH_v/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwsCzzkQ-YyuzA7GA2aBE7z_u8Ok7XumuJZ44M0OuQe0Skadz_S30lq6cAgvvFDN7W6/exec',
   ADMIN_PASS: 'mundial2026',
 };
 
@@ -427,14 +427,7 @@ window.addEventListener('load',()=>{
   buildGoleadoresPickers();
   populateCampeonSelect();
   loadDashboard().then(()=>{
-    // Una vez arrancado el Mundial (pasó la fecha límite), al entrar se muestra
-    // primero la Tabla de posiciones.
-    if(!window.__landingDecidida){
-      window.__landingDecidida=true;
-      if(new Date() >= getFechaLimite()){
-        showPage('dashboard', document.getElementById('navDashboard'));
-      }
-    }
+    if(!window.__navConfigurada){ window.__navConfigurada=true; configurarNav(); }
   });
   iniciarCountdown();
   // La lista de jugadores ahora es fija y autoritativa (cargada desde
@@ -1087,6 +1080,38 @@ function showPage(page,btn){
   if(btn) btn.classList.add('active');
   if(page==='dashboard')loadDashboard();
   if(page==='elim')loadElimPage();
+}
+
+// Orden/visibilidad de las solapas según la fase activa:
+// - Fase de grupos abierta → "Pronósticos" primero y activa; "Eliminatorias" oculta.
+// - Hay una ventana de eliminatorias abierta → "Eliminatorias" primero y activa.
+// - En cualquier otro caso (torneo en curso sin ventana abierta) → "Tablas" activa.
+// Criterio: primero se carga (pronósticos/eliminatorias) y luego se ven las tablas.
+function configurarNav(){
+  const nav=document.querySelector('nav');
+  const bProde =document.getElementById('navProde');
+  const bTablas=document.getElementById('navDashboard');
+  const bElim  =document.getElementById('navElim');
+  const bAdmin =document.getElementById('adminBtn');
+  if(!nav||!bProde||!bTablas||!bElim||!bAdmin) return;
+
+  const openElim  = FASES_ELIM_WIN.some(w=>{const s=elimState(w.id);return s.known && !s.closed;});
+  const hayElim   = FASES_ELIM_WIN.some(w=>elimState(w.id).known);
+  const grupoOpen = new Date() < getFechaLimite();
+
+  // "Eliminatorias" solo aparece cuando ya hay cruces para cargar
+  bElim.style.display = hayElim ? '' : 'none';
+
+  let orden, activaBtn, activaPage;
+  if(openElim){
+    orden=[bElim,bTablas,bProde,bAdmin]; activaBtn=bElim;   activaPage='elim';
+  } else if(grupoOpen){
+    orden=[bProde,bTablas,bElim,bAdmin]; activaBtn=bProde;  activaPage='prode';
+  } else {
+    orden=[bTablas,bElim,bProde,bAdmin]; activaBtn=bTablas; activaPage='dashboard';
+  }
+  orden.forEach(b=>nav.appendChild(b)); // reordena en el DOM
+  showPage(activaPage, activaBtn);
 }
 
 // MEJORA: botón "Volver" en el overlay de login

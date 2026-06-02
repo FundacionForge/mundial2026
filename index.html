@@ -117,9 +117,10 @@ select option{background:#0d2318}
 .search-icon-wrap::before{content:'🔍';position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:15px;z-index:1;pointer-events:none}
 
 .tabs-wrap{max-width:800px;margin:0 auto 0;border-bottom:1px solid var(--verde-border);padding:0 1rem;display:flex}
-.tab-btn{flex:1;padding:11px 8px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text-muted);font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;margin-bottom:-1px}
-.tab-btn.active{color:var(--verde);border-bottom-color:var(--verde)}
-.tab-btn:hover:not(.active){color:var(--text)}
+.tab-btn{flex:1;padding:13px 6px;background:none;border:none;border-bottom:3px solid transparent;color:var(--text);font-family:'Bebas Neue','Barlow',sans-serif;font-size:17px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;transition:all .2s;margin-bottom:-1px;opacity:.55;line-height:1.1}
+.tab-btn.active{color:var(--gold);border-bottom-color:var(--gold);opacity:1;text-shadow:0 0 14px rgba(251,191,36,.35)}
+.tab-btn:hover:not(.active){opacity:.85}
+@media(max-width:480px){.tab-btn{font-size:14px}}
 
 .tabla-wrap{padding:0 1rem;overflow-x:auto;max-width:800px;margin:0 auto}
 .tabla{width:100%;border-collapse:collapse}
@@ -229,10 +230,10 @@ select option{background:#0d2318}
 
 <!-- NAV -->
 <nav>
-  <button class="active" onclick="showPage('prode',this)">⚽ Pronósticos</button>
-  <button id="navDashboard" onclick="showPage('dashboard',this)">📊 Tabla</button>
-  <button onclick="showPage('elim',this)">🏆 Eliminatorias</button>
-  <button onclick="showPage('admin',this)" id="adminBtn">⚙️ Admin</button>
+  <button id="navProde" class="active" onclick="showPage('prode',this)">⚽ Pronósticos</button>
+  <button id="navDashboard" onclick="showPage('dashboard',this)">📊 Tablas</button>
+  <button id="navElim" onclick="showPage('elim',this)">🏆 Eliminatorias</button>
+  <button id="adminBtn" onclick="showPage('admin',this)">⚙️ Admin</button>
 </nav>
 
 <!-- ================================================================ -->
@@ -265,7 +266,7 @@ select option{background:#0d2318}
     <div class="form-closed-banner">
       <div style="font-size:52px;margin-bottom:.75rem">🔒</div>
       <div class="form-closed-title">¡El plazo se cerró!</div>
-      <div class="form-closed-desc">Ya no es posible registrar nuevos pronósticos. ¡Seguí la tabla de posiciones en la pestaña <strong>Tabla</strong>!</div>
+      <div class="form-closed-desc">Ya no es posible registrar nuevos pronósticos. ¡Seguí la tabla de posiciones en la pestaña <strong>Tablas</strong>!</div>
     </div>
   </div>
 
@@ -410,7 +411,7 @@ select option{background:#0d2318}
 <div class="page" id="page-dashboard">
   <div class="dash-header">
     <div class="logo" style="font-size:clamp(38px,8vw,64px)">mund<span class="logo-ia">IA</span>l 2026</div>
-    <div class="dash-subtitle">📊 Tabla de posiciones en vivo</div>
+    <div class="dash-subtitle">📊 Tablas de posiciones en vivo</div>
   </div>
 
   <div class="search-bar-wrap">
