@@ -426,6 +426,8 @@ window.addEventListener('load',()=>{
   buildTeamPickers();
   buildGoleadoresPickers();
   populateCampeonSelect();
+  if(accesoAdmin()) showPage('admin'); // apertura inmediata si entran por /#admin
+  window.addEventListener('hashchange',()=>{ if(accesoAdmin()) showPage('admin'); });
   loadDashboard().then(()=>{
     if(!window.__navConfigurada){ window.__navConfigurada=true; configurarNav(); }
   });
@@ -1111,7 +1113,16 @@ function configurarNav(){
     orden=[bTablas,bElim,bProde,bAdmin]; activaBtn=bTablas; activaPage='dashboard';
   }
   orden.forEach(b=>nav.appendChild(b)); // reordena en el DOM
-  showPage(activaPage, activaBtn);
+  if(accesoAdmin()) showPage('admin'); else showPage(activaPage, activaBtn);
+}
+
+// Acceso discreto a Admin: solo por URL con #admin (o ?admin / ruta /admin).
+// El botón Admin no figura en el menú.
+function accesoAdmin(){
+  const h=(location.hash||'').toLowerCase();
+  const s=(location.search||'').toLowerCase();
+  const p=(location.pathname||'').toLowerCase();
+  return h==='#admin' || s.indexOf('admin')>=0 || p.replace(/\/$/,'').endsWith('/admin');
 }
 
 // MEJORA: botón "Volver" en el overlay de login
