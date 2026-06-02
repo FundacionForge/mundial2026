@@ -2444,10 +2444,10 @@ function fechaHoyLocal(){
   const d=new Date(); const off=d.getTimezoneOffset()*60000;
   return new Date(d-off).toISOString().slice(0,10);
 }
-// Muestra el cartel del día si: hay un aviso activo con la fecha de hoy, texto no vacío,
-// y todavía no son las 12:00. No se repite si el usuario ya lo cerró hoy.
+// Muestra el cartel si hay un aviso activo con la fecha de hoy y texto no vacío.
+// Se muestra durante todo el día; el Admin lo apaga destildando "Activo".
+// No se repite si el usuario ya lo cerró hoy.
 function mostrarAvisoDelDia(){
-  if(new Date().getHours()>=12) return;
   const hoy=fechaHoyLocal();
   const aviso=getAvisos().find(a=>a.habilitado && (a.texto||'').trim() && a.fecha===hoy);
   if(!aviso) return;
