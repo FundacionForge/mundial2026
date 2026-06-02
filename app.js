@@ -625,8 +625,8 @@ function validateStep(n){
     const email=document.getElementById('emailInput').value.trim();
     if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
       document.getElementById('emailError').style.display='block';
-      document.getElementById('emailError').textContent='⚠️ Ingresá un email válido para identificarte.';
-      notify('Ingresá un email válido 📧');return false;
+      document.getElementById('emailError').textContent='⚠️ Ingresa un email válido para identificarte.';
+      notify('Ingresa un email válido 📧');return false;
     }
     document.getElementById('emailError').style.display='none';
     if(!document.getElementById('pais').value){notify('¿De dónde eres?');return false}
@@ -647,8 +647,8 @@ function validateStep(n){
   if(n===4){
     if(golesElegidos.length<5){
       document.getElementById('errorGoles').style.display='block';
-      document.getElementById('errorGoles').textContent=`⚠️ Elegí ${5-golesElegidos.length} goleador${golesElegidos.length===4?'':'es'} más para completar los 5.`;
-      notify('Elegí los 5 goleadores ⚽');return false;
+      document.getElementById('errorGoles').textContent=`⚠️ Elige ${5-golesElegidos.length} goleador${golesElegidos.length===4?'':'es'} más para completar los 5.`;
+      notify('Elige los 5 goleadores ⚽');return false;
     }
     if(new Set(golesElegidos).size<5){
       notify('Los 5 goleadores deben ser distintos');return false;
@@ -915,12 +915,12 @@ function identificarElim(){
   const email=document.getElementById('elimEmail').value.trim().toLowerCase();
   const err=document.getElementById('elimGateError');
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
-    err.style.display='block'; err.textContent='⚠️ Ingresá un email válido.'; return;
+    err.style.display='block'; err.textContent='⚠️ Ingresa un email válido.'; return;
   }
   const part=(allData.participantes||[]).find(p=>(p.email||'').toLowerCase().trim()===email);
   if(!part){
     err.style.display='block';
-    err.textContent='No encontramos ese email. Primero cargá tu pronóstico inicial en la pestaña ⚽ Pronósticos.';
+    err.textContent='No encontramos ese email. Primero carga tu pronóstico inicial en la pestaña ⚽ Pronósticos.';
     document.getElementById('elimContent').innerHTML='';
     return;
   }
@@ -980,7 +980,7 @@ function buildSemifinalForm(){
   if(finalistas.length===2){
     html+=crucePickCard('Final — ¿Campeón? (1º)', 'final_1', finalistas[0], finalistas[1]);
   } else {
-    html+=`<div class="cruce-card"><div class="cruce-label">Final — ¿Campeón? (1º)</div><div style="font-size:12px;color:var(--text-muted)">Elegí primero el ganador de cada semifinal.</div></div>`;
+    html+=`<div class="cruce-card"><div class="cruce-label">Final — ¿Campeón? (1º)</div><div style="font-size:12px;color:var(--text-muted)">Elige primero el ganador de cada semifinal.</div></div>`;
   }
   const perdedores=[perdedorSemi('semis_1'),perdedorSemi('semis_2')].filter(Boolean);
   if(perdedores.length===2){
@@ -1024,7 +1024,7 @@ function submitElimPicks(){
   if(elimState(win).closed){ notify('La ventana de esta fase ya cerró.'); renderElimContent(currentElimPart); return; }
   const req=clavesDeVentana(win);
   const faltan=req.filter(k=>!elimSel[k]);
-  if(faltan.length){ notify('Completá todos los pronósticos de la fase antes de guardar.'); return; }
+  if(faltan.length){ notify('Completa todos los pronósticos de la fase antes de guardar.'); return; }
   const picks={};
   req.forEach(k=>picks[k]=elimSel[k]);
   saveToSheet({action:'updatePicks', email:currentElimEmail, picks:picks, fase:win});
@@ -1176,7 +1176,7 @@ function renderFechaLimiteAdmin(){
 
 async function guardarFechaLimite(){
   const val = document.getElementById('fechaLimiteInput').value;
-  if(!val){notify('Elegí una fecha primero');return;}
+  if(!val){notify('Elige una fecha primero');return;}
   const isoFecha = new Date(val).toISOString();
   await saveToSheet({action:'updateConfig',key:'fechaLimite',value:isoFecha});
   allData.fechaLimite=isoFecha;

@@ -117,10 +117,10 @@ select option{background:#0d2318}
 .search-icon-wrap::before{content:'🔍';position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:15px;z-index:1;pointer-events:none}
 
 .tabs-wrap{max-width:800px;margin:0 auto 0;border-bottom:1px solid var(--verde-border);padding:0 1rem;display:flex}
-.tab-btn{flex:1;padding:13px 6px;background:none;border:none;border-bottom:3px solid transparent;color:var(--text);font-family:'Bebas Neue','Barlow',sans-serif;font-size:17px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;transition:all .2s;margin-bottom:-1px;opacity:.55;line-height:1.1}
-.tab-btn.active{color:var(--gold);border-bottom-color:var(--gold);opacity:1;text-shadow:0 0 14px rgba(251,191,36,.35)}
-.tab-btn:hover:not(.active){opacity:.85}
-@media(max-width:480px){.tab-btn{font-size:14px}}
+.tab-btn{flex:1;padding:14px 6px;background:none;border:none;border-bottom:3px solid transparent;color:var(--text-muted);font-family:'Barlow',sans-serif;font-size:18px;font-weight:800;letter-spacing:.2px;cursor:pointer;transition:color .15s,border-color .15s;margin-bottom:-1px;line-height:1.15}
+.tab-btn.active{color:var(--gold);border-bottom-color:var(--gold)}
+.tab-btn:hover:not(.active){color:var(--text)}
+@media(max-width:520px){.tab-btn{font-size:13px;padding:12px 4px;font-weight:700}}
 
 .tabla-wrap{padding:0 1rem;overflow-x:auto;max-width:800px;margin:0 auto}
 .tabla{width:100%;border-collapse:collapse}
@@ -266,7 +266,7 @@ select option{background:#0d2318}
     <div class="form-closed-banner">
       <div style="font-size:52px;margin-bottom:.75rem">🔒</div>
       <div class="form-closed-title">¡El plazo se cerró!</div>
-      <div class="form-closed-desc">Ya no es posible registrar nuevos pronósticos. ¡Seguí la tabla de posiciones en la pestaña <strong>Tablas</strong>!</div>
+      <div class="form-closed-desc">Ya no es posible registrar nuevos pronósticos. ¡Sigue la tabla de posiciones en la pestaña <strong>Tablas</strong>!</div>
     </div>
   </div>
 
@@ -338,13 +338,13 @@ select option{background:#0d2318}
       <!-- STEP 4: GOLEADORES CON AUTOCOMPLETE -->
       <div class="card" id="step4" style="display:none">
         <div class="card-title">🥅 Los 5 goleadores</div>
-        <div class="card-desc">Buscá y elegí 5 jugadores distintos que van a hacer goles. Cada gol que hagan, <strong style="color:var(--gold)">te suma</strong>.</div>
+        <div class="card-desc">Busca y elige 5 jugadores distintos que van a hacer goles. Cada gol que hagan, <strong style="color:var(--gold)">te suma</strong>.</div>
         <div class="gol-chips" id="golChips"></div>
         <div id="golPickerWrap">
           <div class="team-row">
             <div class="team-num goal" id="golNumIndicator">1</div>
             <div class="autocomplete-container">
-              <input type="text" id="golSearchInput" placeholder="Escribí el nombre del jugador..." oninput="onGolInput(this.value)" onkeydown="onGolKeydown(event)" autocomplete="off">
+              <input type="text" id="golSearchInput" placeholder="Escribe el nombre del jugador..." oninput="onGolInput(this.value)" onkeydown="onGolKeydown(event)" autocomplete="off">
               <div class="autocomplete-dropdown" id="golDropdown"></div>
             </div>
           </div>
@@ -397,7 +397,7 @@ select option{background:#0d2318}
         <span class="confirm-emoji">😊</span>
         <div class="card" style="max-width:480px">
           <div class="card-title" style="text-align:center;font-size:30px;color:var(--gold)">¡Ya tenemos tu pronóstico!</div>
-          <div class="card-desc" style="text-align:center;margin-bottom:0;font-size:15px;color:var(--text)">Ya registramos un pronóstico con ese email. Cada participante puede enviar uno solo. Seguí la tabla para ver cómo vas. ¡Mucha suerte! 🍀</div>
+          <div class="card-desc" style="text-align:center;margin-bottom:0;font-size:15px;color:var(--text)">Ya registramos un pronóstico con ese email. Cada participante puede enviar uno solo. Sigue la tabla para ver cómo te va. ¡Mucha suerte! 🍀</div>
         </div>
       </div>
 
@@ -451,12 +451,12 @@ select option{background:#0d2318}
 <div class="page" id="page-elim">
   <div class="dash-header">
     <div class="logo" style="font-size:clamp(34px,7vw,56px)">Eliminatorias</div>
-    <div class="dash-subtitle">🏆 Cargá tus pronósticos de cada fase</div>
+    <div class="dash-subtitle">🏆 Carga tus pronósticos de cada fase</div>
   </div>
   <div style="max-width:760px;margin:0 auto;padding:0 1rem 4rem">
     <div class="admin-card" id="elimGate" style="margin-bottom:1rem">
-      <div class="admin-title">Identificate</div>
-      <div class="admin-desc">Ingresá el email con el que te inscribiste para cargar o editar tus pronósticos de eliminatorias.</div>
+      <div class="admin-title">Identifícate</div>
+      <div class="admin-desc">Ingresa el email con el que te inscribiste para cargar o editar tus pronósticos de eliminatorias.</div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
         <input type="email" id="elimEmail" placeholder="tu@email.com" style="flex:1;min-width:200px" onkeydown="if(event.key==='Enter')identificarElim()">
         <button class="btn btn-primary btn-sm" onclick="identificarElim()">Entrar</button>
@@ -481,7 +481,7 @@ select option{background:#0d2318}
     <!-- CARD FECHA LÍMITE (NUEVA) -->
     <div class="admin-card admin-fecha-card" style="margin-bottom:1rem">
       <div class="admin-title">📅 Fecha límite para pronósticos</div>
-      <div class="admin-desc">Cuando llegue esta fecha/hora, el formulario se bloquea automáticamente y nadie podrá cargar más pronósticos. Dejalo vacío para no tener límite.</div>
+      <div class="admin-desc">Cuando llegue esta fecha/hora, el formulario se bloquea automáticamente y nadie podrá cargar más pronósticos. Déjalo vacío para no tener límite.</div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
         <input type="datetime-local" id="fechaLimiteInput" style="max-width:260px;flex:1;background:rgba(251,191,36,.05);border-color:rgba(251,191,36,.3)">
         <button class="btn btn-primary btn-sm" onclick="guardarFechaLimite()">Guardar fecha</button>
@@ -493,7 +493,7 @@ select option{background:#0d2318}
     <!-- CARD FECHAS TOPE ELIMINATORIAS (fallback manual si falla la API) -->
     <div class="admin-card admin-fecha-card" style="margin-bottom:1rem">
       <div class="admin-title">⏱️ Fechas tope eliminatorias (fallback)</div>
-      <div class="admin-desc">Normalmente el cierre de carga de cada fase se calcula solo: <strong>12 hs antes del primer partido</strong> de esa fase, según la API. Si la API no funciona, fijá acá manualmente el cierre. Dejalo vacío para usar el cálculo automático.</div>
+      <div class="admin-desc">Normalmente el cierre de carga de cada fase se calcula solo: <strong>12 hs antes del primer partido</strong> de esa fase, según la API. Si la API no funciona, fija aquí manualmente el cierre. Déjalo vacío para usar el cálculo automático.</div>
       <div id="deadlinesElimAdmin"></div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
         <button class="btn btn-primary btn-sm" onclick="guardarDeadlinesElim()">Guardar fechas tope</button>
@@ -558,7 +558,7 @@ select option{background:#0d2318}
 <footer class="site-footer">
   <div class="footer-help">🛟 ¿Algún problema o necesitás ayuda?</div>
   <div class="footer-mails">
-    Escribinos a
+    Escríbenos a
     <a href="mailto:adolforigacci@fforge.org">adolforigacci@fforge.org</a>
     o
     <a href="mailto:hernanoural@fforge.org">hernanoural@fforge.org</a>
