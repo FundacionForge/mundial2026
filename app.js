@@ -2433,6 +2433,15 @@ function quitarAvisoFila(i){
 }
 async function guardarAvisos(){
   const arr=leerAvisosDOM();
+  // No permitir dos avisos con la misma fecha (entrarían en conflicto)
+  const fechas=arr.map(a=>a.fecha).filter(Boolean);
+  const dup=fechas.find((f,i)=>fechas.indexOf(f)!==i);
+  if(dup){
+    const st=document.getElementById('avisosStatus');
+    if(st){ st.textContent='⚠️ Hay dos avisos con la misma fecha ('+dup+'). Solo puede haber uno por día.'; st.style.color='var(--red)'; }
+    notify('No puede haber 2 avisos para el mismo día');
+    return;
+  }
   await saveToSheet({action:'updateConfig',key:'avisos',value:JSON.stringify(arr)});
   allData.avisos=JSON.stringify(arr);
   const st=document.getElementById('avisosStatus'); if(st){ st.textContent='✅ Avisos guardados'; st.style.color='var(--verde)'; }
