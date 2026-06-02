@@ -1462,7 +1462,7 @@ window.addEventListener('load',()=>{
   if (location.hostname === 'github.com') {
     const banner = document.createElement('div');
     banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#7f1d1d;color:#fca5a5;padding:12px 20px;font-size:14px;text-align:center;font-family:sans-serif';
-    banner.innerHTML = '⚠️ <strong>URL incorrecta.</strong> Abrí la app desde GitHub Pages: <a href="https://adolforigacci.github.io/mundial2026/" style="color:#fbbf24;font-weight:bold">adolforigacci.github.io/mundial2026</a>';
+    banner.innerHTML = '⚠️ <strong>URL incorrecta.</strong> Abre la app desde GitHub Pages: <a href="https://fundacionforge.github.io/mundial2026/" style="color:#fbbf24;font-weight:bold">fundacionforge.github.io/mundial2026</a>';
     document.body.prepend(banner);
   }
 
