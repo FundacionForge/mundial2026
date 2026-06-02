@@ -1,8 +1,16 @@
 // ================================================================
-// CONFIG — COMPLETAR ANTES DE PUBLICAR
+// CONFIG
 // ================================================================
+// Backends: producción (datos reales) y prueba (planilla de testing).
+const BACKENDS = {
+  prod: 'https://script.google.com/macros/s/AKfycbwsCzzkQ-YyuzA7GA2aBE7z_u8Ok7XumuJZ44M0OuQe0Skadz_S30lq6cAgvvFDN7W6/exec',
+  test: 'https://script.google.com/macros/s/AKfycbx8CbxK8NwnB_Pn2KvgSZp0vfd1USPhKvCLUcRuxzJFFYtb7bbGdbp4MgBNdgfhZP81Cw/exec',
+};
+// El backend de PRODUCCIÓN se usa SOLO en el dominio oficial. Cualquier otro lado
+// (localhost, staging, etc.) usa el de PRUEBA → imposible ensuciar los datos reales.
+const ES_PRODUCCION = (location.hostname === 'fundacionforge.github.io');
 const CONFIG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwsCzzkQ-YyuzA7GA2aBE7z_u8Ok7XumuJZ44M0OuQe0Skadz_S30lq6cAgvvFDN7W6/exec',
+  SCRIPT_URL: ES_PRODUCCION ? BACKENDS.prod : BACKENDS.test,
   ADMIN_PASS: 'sifon26',
 };
 
@@ -1478,6 +1486,14 @@ window.addEventListener('load',()=>{
     banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#7f1d1d;color:#fca5a5;padding:12px 20px;font-size:14px;text-align:center;font-family:sans-serif';
     banner.innerHTML = '⚠️ <strong>URL incorrecta.</strong> Abre la app desde GitHub Pages: <a href="https://fundacionforge.github.io/mundial2026/" style="color:#fbbf24;font-weight:bold">fundacionforge.github.io/mundial2026</a>';
     document.body.prepend(banner);
+  }
+
+  // Cartel cuando NO es el sitio oficial: se está usando el backend de PRUEBA
+  if (!ES_PRODUCCION) {
+    const tb = document.createElement('div');
+    tb.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:99998;background:#7c2d12;color:#fed7aa;padding:6px 12px;font-size:12px;text-align:center;font-family:sans-serif;letter-spacing:1px';
+    tb.textContent = '🧪 ENTORNO DE PRUEBA — los datos no afectan al sitio oficial';
+    document.body.appendChild(tb);
   }
 
   buildTeamPickers();
