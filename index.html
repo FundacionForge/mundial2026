@@ -68,6 +68,20 @@ select option{background:#0d2318}
 .gol-chip{display:inline-flex;align-items:center;gap:6px;background:#052e16;border:1px solid var(--verde-border);border-radius:20px;padding:5px 8px 5px 13px;font-size:13px;font-weight:600;color:#4ade80}
 .gol-chip button{background:none;border:none;color:#4ade80;cursor:pointer;font-size:18px;line-height:1;padding:0 2px;opacity:.6;transition:opacity .15s}
 .gol-chip button:hover{opacity:1}
+.link-ayuda{background:none;border:none;color:var(--gold);cursor:pointer;font-size:13px;font-weight:600;text-decoration:underline;padding:0;font-family:'Barlow',sans-serif;text-align:left}
+.link-ayuda:hover{opacity:.85}
+.jug-modal{background:var(--verde-card);border:1px solid var(--verde-border);border-radius:16px;padding:1.25rem;width:min(680px,94vw);max-height:86vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.jug-modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.jug-modal-title{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--gold);letter-spacing:1px}
+.jug-close{background:none;border:1px solid var(--verde-border);color:var(--text);width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:15px;flex-shrink:0}
+.jug-close:hover{border-color:var(--verde);color:var(--verde)}
+.jug-modal-body{overflow-y:auto;padding-right:6px;margin-top:4px}
+.jug-grupo{margin-bottom:14px}
+.jug-pais{font-size:13px;font-weight:800;color:var(--verde);letter-spacing:.5px;margin-bottom:7px;border-bottom:1px solid var(--verde-border);padding-bottom:4px;position:sticky;top:0;background:var(--verde-card)}
+.jug-chips{display:flex;flex-wrap:wrap;gap:6px}
+.jug-chip{background:rgba(2,13,4,.6);border:1px solid var(--verde-border);color:var(--text);border-radius:16px;padding:5px 11px;font-size:12.5px;cursor:pointer;transition:all .12s}
+.jug-chip:hover{border-color:var(--verde);background:var(--verde-mid)}
+.jug-chip.sel{background:var(--verde);color:#06210f;border-color:var(--verde);font-weight:700}
 
 /* ADMIN FECHA LÍMITE */
 .admin-fecha-card{border-color:rgba(251,191,36,.35) !important}
@@ -229,6 +243,19 @@ select option{background:#0d2318}
   </div>
 </div>
 
+<!-- PANEL AYUDA: EQUIPOS Y JUGADORES -->
+<div class="login-overlay" id="jugadoresOverlay" style="display:none">
+  <div class="jug-modal">
+    <div class="jug-modal-head">
+      <div class="jug-modal-title">⚽ Equipos y jugadores</div>
+      <button class="jug-close" onclick="cerrarAyudaJugadores()" title="Cerrar">✕</button>
+    </div>
+    <input type="search" id="jugAyudaSearch" placeholder="Filtrar por país o jugador..." oninput="filtrarAyudaJugadores(this.value)">
+    <div class="jug-modal-body" id="jugadoresAyudaBody"></div>
+    <div style="font-size:11px;color:var(--text-muted);margin-top:10px;text-align:center">Toca un jugador para agregarlo como goleador (máx. 5)</div>
+  </div>
+</div>
+
 <!-- NAV -->
 <nav>
   <button id="navProde" class="active" onclick="showPage('prode',this)">⚽ Pronósticos</button>
@@ -349,6 +376,9 @@ select option{background:#0d2318}
               <div class="autocomplete-dropdown" id="golDropdown"></div>
             </div>
           </div>
+        </div>
+        <div style="margin-top:12px">
+          <button type="button" class="link-ayuda" onclick="abrirAyudaJugadores()">📋 ¿No recuerdas un nombre? Ver todos los equipos y jugadores</button>
         </div>
         <div id="errorGoles" style="display:none;color:var(--red);font-size:13px;margin-top:8px;padding:8px 12px;background:rgba(248,113,113,.1);border-radius:8px;border:1px solid rgba(248,113,113,.3)"></div>
         <div class="btn-row">
