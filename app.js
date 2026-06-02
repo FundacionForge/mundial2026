@@ -2569,6 +2569,48 @@ function renderPronoContenido(p){
     <div class="summary-group"><div class="summary-title">⚡ Eliminatorias</div>${elim}</div>`;
 }
 
+// ================================================================
+// EXPORTAR A CSV (se abre en Excel) — Admin
+// Filas: participantes. Columnas: cada elección + los puntos que aportó +
+// totales (1ra Ronda / Eliminatorias / General), ordenado como la tabla.
+// ================================================================
+function descargarExcel(){
+  const PE=allData.puntosEquipos||{}, GJ=allData.golesJugadores||{};
+  const camp=(allData.campeonFinal||'').trim();
+  const parts=[...(allData.participantes||[])].sort((a,b)=>calcPuntos(b,'total')-calcPuntos(a,'total'));
+  if(!parts.length){ notify('No hay participantes para exportar'); return; }
+
+  const cell=v => (typeof v==='number') ? String(v) : '"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+
+  const header=['Nombre','Email','País'];
+  for(let i=1;i<=5;i++) header.push('Mejor '+i,'Pts M'+i);
+  for(let i=1;i<=5;i++) header.push('Peor '+i,'Pts P'+i);
+  for(let i=1;i<=5;i++) header.push('Goleador '+i,'Goles G'+i);
+  header.push('Campeón','Bonus Campeón','Pts 1ra Ronda','Pts Eliminatorias','Total General');
+
+  const lines=[header.map(cell).join(';')];
+  parts.forEach(p=>{
+    const arr=s=>(s||'').split(',').map(x=>x.trim()).filter(Boolean);
+    const mejores=arr(p.mejores), peores=arr(p.peores), goles=arr(p.goleadores);
+    const row=[p.nombre||'', p.email||'', p.pais||''];
+    for(let i=0;i<5;i++){ const t=mejores[i]||''; row.push(t, t?(PE[t]||0):''); }
+    for(let i=0;i<5;i++){ const t=peores[i]||'';  row.push(t, t?(-(PE[t]||0)):''); }
+    for(let i=0;i<5;i++){ const g=goles[i]||'';   row.push(g, g?(GJ[g]||0):''); }
+    const bonus=(camp&&(p.campeon||'').trim()===camp)?20:0;
+    row.push(p.campeon||'', bonus, calcPuntos(p,'fase1'), calcPuntos(p,'fase2'), calcPuntos(p,'total'));
+    lines.push(row.map(cell).join(';'));
+  });
+
+  const csv='﻿'+lines.join('\r\n'); // BOM para que Excel lea bien los acentos
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='pronosticos_mundial2026.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  notify('Planilla descargada ✓');
+}
+
 function notify(msg){
   const n=document.getElementById('notif');n.textContent=msg;n.classList.add('show');
   setTimeout(()=>n.classList.remove('show'),3000);
