@@ -1457,7 +1457,7 @@ const FASES_ELIM_WIN = [
 ];
 
 let currentStep=1, adminLogged=false, currentTab='fase1', filtroActivo='';
-let allData={participantes:[],puntosEquipos:{},golesJugadores:{},resultadosElim:{},campeonFinal:'',fechaLimite:'',cierresElim:{},forzarPronosticos:''};
+let allData={participantes:[],puntosEquipos:{},golesJugadores:{},resultadosElim:{},campeonFinal:'',fechaLimite:'',cierresElim:{},forzarPronosticos:'',avisos:''};
 let dashParts=[];          // participantes tal como se muestran en la tabla (para el click)
 let currentPronoIdx=-1;    // fila abierta en el visor de pronóstico
 let datosCargados=false;   // true tras la primera carga válida de getData (evita revertir al fallback)
@@ -1504,6 +1504,7 @@ window.addEventListener('load',()=>{
   window.addEventListener('hashchange',()=>{ if(accesoAdmin()) showPage('admin'); });
   loadDashboard().then(()=>{
     if(!window.__navConfigurada){ window.__navConfigurada=true; configurarNav(); }
+    mostrarAvisoDelDia();
   });
   iniciarCountdown();
   // La lista de jugadores ahora es fija y autoritativa (cargada desde
@@ -2030,6 +2031,7 @@ function showTab(tab,btn){
   // "Tabla Eliminatorias" no se puede elegir hasta que la fase esté disponible
   if(tab==='fase2' && !hayElimDisponible()) return;
   currentTab=tab;
+  try{ localStorage.setItem('mund_tab', tab); }catch(e){} // recordar la solapa al refrescar
   renderDashboard();
 }
 
@@ -2252,6 +2254,7 @@ function showPage(page,btn){
   document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
   if(btn) btn.classList.add('active');
+  if(page!=='admin'){ try{ localStorage.setItem('mund_page', page); }catch(e){} } // recordar para mantener al refrescar
   if(page==='dashboard')loadDashboard();
   if(page==='elim')loadElimPage();
 }
@@ -2277,8 +2280,13 @@ function configurarNav(){
   // grupos ya terminó), salvo que el Admin fuerce mostrarla.
   const mostrarPro = !hayElim || forzarPro;
 
-  // Tabla activa por defecto: "1ra Ronda" en fase de grupos; "General" cuando ya hay eliminatorias
-  if(!window.__tabAutoSet){ window.__tabAutoSet=true; currentTab = hayElim ? 'total' : 'fase1'; }
+  // Solapa de Tablas: respeta la última elegida (al refrescar); si no, default por fase
+  if(!window.__tabAutoSet){
+    window.__tabAutoSet=true;
+    let st; try{ st=localStorage.getItem('mund_tab'); }catch(e){}
+    if(st==='fase1' || st==='total' || (st==='fase2' && hayElim)) currentTab=st;
+    else currentTab = hayElim ? 'total' : 'fase1';
+  }
 
   bElim.style.display  = hayElim   ? '' : 'none';
   bProde.style.display = mostrarPro ? '' : 'none';
@@ -2293,6 +2301,14 @@ function configurarNav(){
   } else {
     orden=[bTablas,bElim,bProde,bAdmin]; activaBtn=bTablas; activaPage='dashboard';
   }
+  // Al refrescar, mantener la última página donde estaba el usuario (si sigue visible)
+  let lastPage; try{ lastPage=localStorage.getItem('mund_page'); }catch(e){}
+  const visible={prode:mostrarPro, dashboard:true, elim:hayElim};
+  if(lastPage && visible[lastPage]){
+    activaPage=lastPage;
+    activaBtn={prode:bProde, dashboard:bTablas, elim:bElim}[lastPage];
+  }
+
   orden.forEach(b=>nav.appendChild(b)); // reordena en el DOM
   // Recordar la decisión para aplicarla al instante en la próxima carga (sin flash)
   try{ localStorage.setItem('mund_nav', JSON.stringify({hayElim, mostrarPro, activaPage})); }catch(e){}
@@ -2357,6 +2373,7 @@ async function loadAdminData(){
   renderFechaLimiteAdmin();
   renderDeadlinesElimAdmin();
   renderForzarProAdmin();
+  renderAvisosAdmin();
 }
 
 // ---- ADMIN: forzar visibilidad de la solapa Pronósticos ----
@@ -2371,6 +2388,77 @@ async function guardarForzarPro(){
   await saveToSheet({action:'updateConfig',key:'forzar_pronosticos',value:val});
   allData.forzarPronosticos = val;
   notify('Preferencia guardada ✓');
+}
+
+// ================================================================
+// AVISOS DEL DÍA (cartel de bienvenida configurable desde Admin)
+// ================================================================
+function getAvisos(){
+  try{ const a=JSON.parse(allData.avisos||'[]'); return Array.isArray(a)?a:[]; }catch(e){ return []; }
+}
+function escAttr(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function escTxt(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+function renderAvisosAdmin(){
+  const cont=document.getElementById('avisosAdmin'); if(!cont) return;
+  const avisos=getAvisos();
+  if(!avisos.length){ cont.innerHTML='<div style="color:var(--text-muted);font-size:13px">Sin avisos. Usa el botón "+ Agregar aviso".</div>'; return; }
+  cont.innerHTML=avisos.map((a,i)=>`
+    <div class="aviso-row" style="border:1px solid var(--verde-border);border-radius:10px;padding:10px;margin-bottom:8px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:6px">
+        <input type="date" class="av-fecha" value="${escAttr(a.fecha)}" style="max-width:170px">
+        <input type="text" class="av-titulo" placeholder="Título" value="${escAttr(a.titulo)}" style="flex:1;min-width:160px">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" class="av-activo" ${a.habilitado?'checked':''} style="width:auto;margin:0">Activo</label>
+        <button class="btn btn-secondary btn-sm" onclick="quitarAvisoFila(${i})" title="Quitar">✕</button>
+      </div>
+      <textarea class="av-texto" placeholder="Texto a mostrar (ej: ¿Sabías que...?)" rows="2" style="width:100%">${escTxt(a.texto)}</textarea>
+    </div>`).join('');
+}
+
+function leerAvisosDOM(){
+  return [...document.querySelectorAll('#avisosAdmin .aviso-row')].map(r=>({
+    fecha:      r.querySelector('.av-fecha').value,
+    titulo:     r.querySelector('.av-titulo').value,
+    texto:      r.querySelector('.av-texto').value,
+    habilitado: r.querySelector('.av-activo').checked,
+  }));
+}
+function agregarAvisoFila(){
+  const arr=leerAvisosDOM(); arr.push({fecha:'',titulo:'',texto:'',habilitado:false});
+  allData.avisos=JSON.stringify(arr); renderAvisosAdmin();
+}
+function quitarAvisoFila(i){
+  const arr=leerAvisosDOM(); arr.splice(i,1);
+  allData.avisos=JSON.stringify(arr); renderAvisosAdmin();
+}
+async function guardarAvisos(){
+  const arr=leerAvisosDOM();
+  await saveToSheet({action:'updateConfig',key:'avisos',value:JSON.stringify(arr)});
+  allData.avisos=JSON.stringify(arr);
+  const st=document.getElementById('avisosStatus'); if(st){ st.textContent='✅ Avisos guardados'; st.style.color='var(--verde)'; }
+  notify('Avisos guardados ✓');
+}
+
+// Fecha local de hoy en formato YYYY-MM-DD
+function fechaHoyLocal(){
+  const d=new Date(); const off=d.getTimezoneOffset()*60000;
+  return new Date(d-off).toISOString().slice(0,10);
+}
+// Muestra el cartel del día si: hay un aviso activo con la fecha de hoy, texto no vacío,
+// y todavía no son las 12:00. No se repite si el usuario ya lo cerró hoy.
+function mostrarAvisoDelDia(){
+  if(new Date().getHours()>=12) return;
+  const hoy=fechaHoyLocal();
+  const aviso=getAvisos().find(a=>a.habilitado && (a.texto||'').trim() && a.fecha===hoy);
+  if(!aviso) return;
+  try{ if(localStorage.getItem('mund_aviso_'+hoy)==='1') return; }catch(e){}
+  document.getElementById('avisoTitulo').textContent = aviso.titulo || '¡Hola!';
+  document.getElementById('avisoTexto').textContent  = aviso.texto || '';
+  document.getElementById('avisoOverlay').style.display='flex';
+}
+function cerrarAviso(){
+  try{ localStorage.setItem('mund_aviso_'+fechaHoyLocal(),'1'); }catch(e){}
+  const ov=document.getElementById('avisoOverlay'); if(ov) ov.style.display='none';
 }
 
 // ---- ADMIN FECHA LÍMITE ----
@@ -2457,12 +2545,19 @@ async function borrarDeadlinesElim(){
 function renderAdminParticipantes(){
   const p=allData.participantes||[];
   document.getElementById('adminParticipantes').innerHTML=p.length
-    ?p.map((x,i)=>`<tr>
+    ?p.map((x,i)=>`<tr onclick="verPronosticoAdmin(${i})" style="cursor:pointer" title="Ver pronóstico de ${(x.nombre||'').replace(/"/g,'')}">
         <td style="padding:6px 4px">${i+1}. <strong>${x.nombre}</strong></td>
         <td style="padding:6px 4px;color:var(--text-dim);font-size:11px">${x.email||'—'}</td>
         <td style="padding:6px 4px;text-align:right;color:var(--verde)">${x.pais}</td>
       </tr>`).join('')
     :'<tr><td style="color:var(--text-muted)">Sin inscriptos aún</td></tr>';
+}
+
+// Admin: ver el pronóstico de un participante directamente (sin pedir email)
+function verPronosticoAdmin(i){
+  const p=(allData.participantes||[])[i]; if(!p) return;
+  document.getElementById('pronoOverlay').style.display='flex';
+  renderPronoContenido(p);
 }
 
 function renderAdminGoles(){

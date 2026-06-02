@@ -256,6 +256,16 @@ select option{background:#0d2318}
   </div>
 </div>
 
+<!-- CARTEL DE AVISO DEL DÍA -->
+<div class="login-overlay" id="avisoOverlay" style="display:none">
+  <div class="login-box" style="width:min(440px,92vw);text-align:center;position:relative">
+    <button onclick="cerrarAviso()" title="Cerrar" style="position:absolute;top:10px;right:12px;background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;line-height:1">✕</button>
+    <div id="avisoTitulo" style="font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--gold);letter-spacing:1px;margin:6px 0 12px"></div>
+    <div id="avisoTexto" style="font-size:15px;color:var(--text);line-height:1.6;white-space:pre-wrap;margin-bottom:20px"></div>
+    <button class="btn btn-primary" style="width:100%" onclick="cerrarAviso()">Aceptar</button>
+  </div>
+</div>
+
 <!-- VISOR DE PRONÓSTICO (click en una fila de la tabla) -->
 <div class="login-overlay" id="pronoOverlay" style="display:none">
   <div class="jug-modal">
@@ -552,6 +562,18 @@ select option{background:#0d2318}
         <button class="btn btn-secondary btn-sm" onclick="borrarDeadlinesElim()">Volver a automático</button>
       </div>
       <div id="deadlinesElimStatus" style="font-size:12px;color:var(--text-muted);margin-top:8px"></div>
+    </div>
+
+    <!-- AVISOS DEL DÍA -->
+    <div class="admin-card" style="margin-bottom:1rem">
+      <div class="admin-title">📣 Avisos del día</div>
+      <div class="admin-desc">Cartel de bienvenida que aparece al entrar, <strong>solo el día de la fecha indicada y hasta las 12:00</strong>. Marca "Activo" para habilitar cada aviso (si no está marcado, no se muestra). Sirve para un "¿Sabías que...?", "¡Último momento!", etc.</div>
+      <div id="avisosAdmin"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+        <button class="btn btn-secondary btn-sm" onclick="agregarAvisoFila()">+ Agregar aviso</button>
+        <button class="btn btn-primary btn-sm" onclick="guardarAvisos()">Guardar avisos</button>
+      </div>
+      <div id="avisosStatus" style="font-size:12px;color:var(--text-muted);margin-top:8px"></div>
     </div>
 
     <div class="admin-card" style="margin-bottom:1rem">
