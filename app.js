@@ -1452,6 +1452,7 @@ let currentStep=1, adminLogged=false, currentTab='fase1', filtroActivo='';
 let allData={participantes:[],puntosEquipos:{},golesJugadores:{},resultadosElim:{},campeonFinal:'',fechaLimite:'',cierresElim:{},forzarPronosticos:''};
 let dashParts=[];          // participantes tal como se muestran en la tabla (para el click)
 let currentPronoIdx=-1;    // fila abierta en el visor de pronóstico
+let datosCargados=false;   // true tras la primera carga válida de getData (evita revertir al fallback)
 
 // Email con el que el usuario quedó identificado (al cargar o al ver su pronóstico)
 function getKnownEmail(){
@@ -1499,6 +1500,7 @@ window.addEventListener('load',()=>{
 // ================================================================
 function getFechaLimite(){
   if(allData.fechaLimite) return new Date(allData.fechaLimite);
+  try{ const c=localStorage.getItem('mund_fechaLimite'); if(c) return new Date(c); }catch(e){}
   return FECHA_MUNDIAL;
 }
 
@@ -1882,12 +1884,24 @@ async function enviarPronostico(){
 // ================================================================
 // DASHBOARD
 // ================================================================
+// Aplica una respuesta de getData solo si es válida (participantes como array).
+// Recuerda la fecha límite para evitar saltos/parpadeos del contador.
+function aplicarDatos(data){
+  if(data && Array.isArray(data.participantes)){
+    allData=data; datosCargados=true;
+    try{ localStorage.setItem('mund_fechaLimite', allData.fechaLimite||''); }catch(e){}
+    return true;
+  }
+  return false;
+}
+
 async function loadDashboard(){
   try{
     const res=await fetch(CONFIG.SCRIPT_URL+'?action=getData');
-    allData=await res.json();
-    renderDashboard();
-  }catch(e){renderDemoData();}
+    if(aplicarDatos(await res.json())){ renderDashboard(); return; }
+  }catch(e){}
+  // Falla o respuesta inválida: mantener los últimos datos buenos (no revertir al fallback)
+  if(datosCargados) renderDashboard(); else renderDemoData();
 }
 
 function renderDemoData(){
@@ -2022,7 +2036,7 @@ let currentElimEmail='', currentElimPart=null, currentElimWin='', elimSel={}, el
 function loadElimPage(){
   // Refresca datos y, si ya estaba identificado, re-renderiza
   fetch(CONFIG.SCRIPT_URL+'?action=getData')
-    .then(r=>r.json()).then(d=>{ if(d&&d.participantes) allData=d; })
+    .then(r=>r.json()).then(d=>{ aplicarDatos(d); })
     .catch(()=>{})
     .finally(()=>{ if(currentElimEmail) identificarElim(); });
 }
@@ -2317,8 +2331,9 @@ function checkLogin(){
 }
 
 async function loadAdminData(){
-  try{const res=await fetch(CONFIG.SCRIPT_URL+'?action=getData');allData=await res.json();}
-  catch(e){renderDemoData();}
+  let ok=false;
+  try{ const res=await fetch(CONFIG.SCRIPT_URL+'?action=getData'); ok=aplicarDatos(await res.json()); }catch(e){}
+  if(!ok && !datosCargados) renderDemoData();
   renderAdminParticipantes();
   renderAdminGoles();
   renderAdminPuntosFase();
