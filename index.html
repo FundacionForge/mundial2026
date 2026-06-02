@@ -490,6 +490,16 @@ select option{background:#0d2318}
       <div id="fechaLimiteStatus" style="font-size:12px;color:var(--text-muted);margin-top:8px"></div>
     </div>
 
+    <!-- CARD FORZAR SOLAPA PRONÓSTICOS -->
+    <div class="admin-card" style="margin-bottom:1rem">
+      <div class="admin-title">⚽ Forzar solapa Pronósticos</div>
+      <div class="admin-desc">Cuando ya hay eliminatorias disponibles, la solapa "Pronósticos" se oculta sola (la fase de grupos terminó). Actívala solo si quieres que siga visible igual, para revisarla.</div>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px">
+        <input type="checkbox" id="forzarProChk" onchange="guardarForzarPro()" style="width:auto;margin:0">
+        <span>Mantener visible la solapa Pronósticos</span>
+      </label>
+    </div>
+
     <!-- CARD FECHAS TOPE ELIMINATORIAS (fallback manual si falla la API) -->
     <div class="admin-card admin-fecha-card" style="margin-bottom:1rem">
       <div class="admin-title">⏱️ Fechas tope eliminatorias (fallback)</div>

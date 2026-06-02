@@ -406,7 +406,7 @@ const FASES_ELIM_WIN = [
 ];
 
 let currentStep=1, adminLogged=false, currentTab='total', filtroActivo='';
-let allData={participantes:[],puntosEquipos:{},golesJugadores:{},resultadosElim:{},campeonFinal:'',fechaLimite:'',cierresElim:{}};
+let allData={participantes:[],puntosEquipos:{},golesJugadores:{},resultadosElim:{},campeonFinal:'',fechaLimite:'',cierresElim:{},forzarPronosticos:''};
 
 // Goleadores elegidos en Step 4
 let golesElegidos=[];
@@ -1100,15 +1100,21 @@ function configurarNav(){
   const openElim  = FASES_ELIM_WIN.some(w=>{const s=elimState(w.id);return s.known && !s.closed;});
   const hayElim   = FASES_ELIM_WIN.some(w=>elimState(w.id).known);
   const grupoOpen = new Date() < getFechaLimite();
+  const forzarPro = (allData.forzarPronosticos==='1' || allData.forzarPronosticos===true);
+  // Una vez que hay eliminatorias disponibles, "Pronósticos" se oculta (la fase de
+  // grupos ya terminó), salvo que el Admin fuerce mostrarla.
+  const mostrarPro = !hayElim || forzarPro;
 
-  // "Eliminatorias" solo aparece cuando ya hay cruces para cargar
-  bElim.style.display = hayElim ? '' : 'none';
+  bElim.style.display  = hayElim   ? '' : 'none';
+  bProde.style.display = mostrarPro ? '' : 'none';
 
   let orden, activaBtn, activaPage;
   if(openElim){
     orden=[bElim,bTablas,bProde,bAdmin]; activaBtn=bElim;   activaPage='elim';
-  } else if(grupoOpen){
+  } else if(grupoOpen && mostrarPro){
     orden=[bProde,bTablas,bElim,bAdmin]; activaBtn=bProde;  activaPage='prode';
+  } else if(hayElim){
+    orden=[bElim,bTablas,bProde,bAdmin]; activaBtn=bElim;   activaPage='elim';
   } else {
     orden=[bTablas,bElim,bProde,bAdmin]; activaBtn=bTablas; activaPage='dashboard';
   }
@@ -1153,6 +1159,21 @@ async function loadAdminData(){
   renderAdminEliminatorias();
   renderFechaLimiteAdmin();
   renderDeadlinesElimAdmin();
+  renderForzarProAdmin();
+}
+
+// ---- ADMIN: forzar visibilidad de la solapa Pronósticos ----
+function renderForzarProAdmin(){
+  const chk=document.getElementById('forzarProChk');
+  if(chk) chk.checked = (allData.forzarPronosticos==='1' || allData.forzarPronosticos===true);
+}
+
+async function guardarForzarPro(){
+  const chk=document.getElementById('forzarProChk');
+  const val = chk.checked ? '1' : '';
+  await saveToSheet({action:'updateConfig',key:'forzar_pronosticos',value:val});
+  allData.forzarPronosticos = val;
+  notify('Preferencia guardada ✓');
 }
 
 // ---- ADMIN FECHA LÍMITE ----
