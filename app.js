@@ -1450,6 +1450,19 @@ const FASES_ELIM_WIN = [
 
 let currentStep=1, adminLogged=false, currentTab='fase1', filtroActivo='';
 let allData={participantes:[],puntosEquipos:{},golesJugadores:{},resultadosElim:{},campeonFinal:'',fechaLimite:'',cierresElim:{},forzarPronosticos:''};
+let dashParts=[];          // participantes tal como se muestran en la tabla (para el click)
+let currentPronoIdx=-1;    // fila abierta en el visor de pronóstico
+
+// Email con el que el usuario quedó identificado (al cargar o al ver su pronóstico)
+function getKnownEmail(){
+  try{ return (localStorage.getItem('mund_email') || currentElimEmail || '').toLowerCase().trim(); }
+  catch(e){ return (currentElimEmail||'').toLowerCase().trim(); }
+}
+function setKnownEmail(e){
+  e=(e||'').toLowerCase().trim();
+  try{ localStorage.setItem('mund_email', e); }catch(_){}
+  currentElimEmail = e;
+}
 
 // Goleadores elegidos en Step 4
 let golesElegidos=[];
@@ -1857,6 +1870,7 @@ async function enviarPronostico(){
       mode: 'no-cors',
       body: JSON.stringify(payload)
     });
+    setKnownEmail(email); // queda identificado para poder ver su propio pronóstico
     document.getElementById('step6').style.display='none';
     document.getElementById('step7').style.display='block';
   }catch(e){
@@ -1943,6 +1957,8 @@ function renderDashboard(){
   // Últimos 4: las 4 peores posiciones, extendido a empates en el corte.
   const loserCutoff=(n>=5 && hasSpread)?scores[n-4]:null;
 
+  dashParts=todos; // referencia para abrir el pronóstico al cliquear una fila
+
   tbody.innerHTML=todos.map((p,i)=>{
     const pts=scores[i];
     const rank=scores.findIndex(s=>s===pts)+1; // empates comparten posición
@@ -1959,7 +1975,7 @@ function renderDashboard(){
     const hidden=filtro&&!isMatch?'hidden-row':'';
     const hl=isMatch?'highlight':'';
     const crown=isLeader?' 👑':'';
-    return `<tr class="${hidden} ${rowClass} ${hl}">
+    return `<tr class="${hidden} ${rowClass} ${hl}" onclick="abrirPronostico(${i})" style="cursor:pointer" title="Ver pronóstico">
       <td><div class="rank-badge ${rankClass}">${rank}</div></td>
       <td><div class="player-cell">
         <div class="avatar">${initials}</div>
@@ -2048,7 +2064,7 @@ function identificarElim(){
     return;
   }
   err.style.display='none';
-  currentElimEmail=email; currentElimPart=part;
+  setKnownEmail(email); currentElimPart=part;
   renderElimContent(part);
 }
 
@@ -2480,6 +2496,79 @@ async function saveToSheet(payload){
   });}
   catch(e){console.log('Error:',e);}
 }
+
+// ================================================================
+// VISOR DE PRONÓSTICO (al cliquear una fila de la tabla)
+// Solo puedes ver tu propio pronóstico: si el sitio ya conoce tu email y
+// coincide con la fila, lo muestra; si no, te pide el correo de esa fila.
+// ================================================================
+function abrirPronostico(i){
+  const p=dashParts[i]; if(!p) return;
+  currentPronoIdx=i;
+  document.getElementById('pronoOverlay').style.display='flex';
+  const known=getKnownEmail();
+  if(known && known===(p.email||'').toLowerCase().trim()) renderPronoContenido(p);
+  else renderPronoGate(p);
+}
+
+function cerrarPronostico(){
+  document.getElementById('pronoOverlay').style.display='none';
+}
+
+function renderPronoGate(p){
+  document.getElementById('pronoTitle').textContent='🔒 Ver tu pronóstico';
+  document.getElementById('pronoBody').innerHTML=`
+    <div style="font-size:14px;color:var(--text);line-height:1.6;margin-bottom:14px">Para ver este pronóstico, ingresa tu correo electrónico. Solo podrás ver el tuyo.</div>
+    <input type="email" id="pronoEmailInput" placeholder="tu@email.com" onkeydown="if(event.key==='Enter')confirmarEmailPronostico()" style="margin-bottom:10px">
+    <button class="btn btn-primary" style="width:100%" onclick="confirmarEmailPronostico()">Ver pronóstico</button>
+    <div id="pronoGateError" style="display:none;color:var(--red);font-size:13px;margin-top:10px"></div>`;
+  const inp=document.getElementById('pronoEmailInput'); if(inp) inp.focus();
+}
+
+function confirmarEmailPronostico(){
+  const p=dashParts[currentPronoIdx]; if(!p) return;
+  const email=(document.getElementById('pronoEmailInput').value||'').toLowerCase().trim();
+  const err=document.getElementById('pronoGateError');
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ err.style.display='block'; err.textContent='⚠️ Ingresa un email válido.'; return; }
+  if(email===(p.email||'').toLowerCase().trim()){
+    setKnownEmail(email);
+    renderPronoContenido(p);
+  } else {
+    err.style.display='block';
+    err.textContent='Solo puedes ver tus propios pronósticos.';
+  }
+}
+
+function renderPronoContenido(p){
+  document.getElementById('pronoTitle').textContent='📋 Pronóstico de '+(p.nombre||'');
+  const chips=(csv,cls)=>{
+    const arr=(csv||'').split(',').map(s=>s.trim()).filter(Boolean);
+    return arr.length? arr.map(x=>`<span class="chip ${cls}">${x}</span>`).join('') : '<span style="color:var(--text-muted)">—</span>';
+  };
+  const picks=p.picks||{};
+  const FAS=[['16avos','Dieciseisavos',16],['8vos','Octavos',8],['4tos','Cuartos',4],['semis','Semifinales',2],['3ro','Tercer puesto',1],['final','Final',1]];
+  let elim='', any=false;
+  FAS.forEach(([id,label,nc])=>{
+    let lines='';
+    for(let c=1;c<=nc;c++){
+      const k=id+'_'+c, pick=picks[k]; if(!pick) continue; any=true;
+      const cr=(allData.crucesElim||{})[k]||{};
+      const matchup=(cr.home&&cr.away)?`<span style="color:var(--text-muted)">${cr.home} vs ${cr.away} →</span> `:'';
+      lines+=`<div style="font-size:13px;padding:3px 0">${matchup}<strong style="color:var(--verde)">${pick}</strong></div>`;
+    }
+    if(lines) elim+=`<div style="margin-top:10px"><div class="jug-pais">${label}</div>${lines}</div>`;
+  });
+  if(!any) elim='<div style="color:var(--text-muted);font-size:13px">Sin pronósticos de eliminatorias cargados todavía.</div>';
+
+  document.getElementById('pronoBody').innerHTML=`
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">${p.pais||''}</div>
+    <div class="summary-group"><div class="summary-title">⭐ 5 mejores</div><div class="summary-chips">${chips(p.mejores,'chip-green')}</div></div>
+    <div class="summary-group"><div class="summary-title">💀 5 peores</div><div class="summary-chips">${chips(p.peores,'chip-red')}</div></div>
+    <div class="summary-group"><div class="summary-title">🥅 5 goleadores</div><div class="summary-chips">${chips(p.goleadores,'chip-gold')}</div></div>
+    <div class="summary-group"><div class="summary-title">🏆 Campeón</div><div class="summary-chips">${chips(p.campeon,'chip-gold')}</div></div>
+    <div class="summary-group"><div class="summary-title">⚡ Eliminatorias</div>${elim}</div>`;
+}
+
 function notify(msg){
   const n=document.getElementById('notif');n.textContent=msg;n.classList.add('show');
   setTimeout(()=>n.classList.remove('show'),3000);

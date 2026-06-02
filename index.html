@@ -256,6 +256,17 @@ select option{background:#0d2318}
   </div>
 </div>
 
+<!-- VISOR DE PRONÓSTICO (click en una fila de la tabla) -->
+<div class="login-overlay" id="pronoOverlay" style="display:none">
+  <div class="jug-modal">
+    <div class="jug-modal-head">
+      <div class="jug-modal-title" id="pronoTitle">Pronóstico</div>
+      <button class="jug-close" onclick="cerrarPronostico()" title="Cerrar">✕</button>
+    </div>
+    <div class="jug-modal-body" id="pronoBody"></div>
+  </div>
+</div>
+
 <!-- NAV -->
 <nav>
   <button id="navProde" class="active" onclick="showPage('prode',this)">⚽ Pronósticos</button>
