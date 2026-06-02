@@ -1702,6 +1702,30 @@ function goStep(n){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
+// Paso 1 → 2: además de validar el formato, avisa al instante si el email ya
+// tiene un pronóstico cargado (sin tener que llegar al final).
+async function siguienteDesdeStep1(btn){
+  if(!validateStep(1)) return;
+  const email = document.getElementById('emailInput').value.trim().toLowerCase();
+  const txt = btn ? btn.textContent : '';
+  if(btn){ btn.disabled=true; btn.textContent='Verificando…'; }
+  let existe=false;
+  try{
+    const res = await fetch(CONFIG.SCRIPT_URL+'?action=checkEmail&email='+encodeURIComponent(email));
+    const data = await res.json();
+    existe = !!(data && data.exists);
+  }catch(e){ existe=false; } // si el chequeo falla, igual se valida al enviar
+  if(btn){ btn.disabled=false; btn.textContent=txt; }
+  if(existe){
+    const err=document.getElementById('emailError');
+    err.style.display='block';
+    err.innerHTML='😊 <strong>¡Ya tenemos tu pronóstico!</strong> Este email ya está registrado. Cada participante puede enviar uno solo. Mira la tabla para ver cómo te va.';
+    notify('Ese email ya tiene un pronóstico cargado');
+    return;
+  }
+  goStep(2);
+}
+
 function validateStep(n){
   if(n===1){
     if(!document.getElementById('nombre').value.trim()){notify('Escribe tu nombre 😅');return false}
