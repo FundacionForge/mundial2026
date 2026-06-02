@@ -405,7 +405,7 @@ const FASES_ELIM_WIN = [
   {id:'semifinal', label:'Semifinal + Final'},
 ];
 
-let currentStep=1, adminLogged=false, currentTab='total', filtroActivo='';
+let currentStep=1, adminLogged=false, currentTab='fase1', filtroActivo='';
 let allData={participantes:[],puntosEquipos:{},golesJugadores:{},resultadosElim:{},campeonFinal:'',fechaLimite:'',cierresElim:{},forzarPronosticos:''};
 
 // Goleadores elegidos en Step 4
@@ -426,6 +426,7 @@ window.addEventListener('load',()=>{
   buildTeamPickers();
   buildGoleadoresPickers();
   populateCampeonSelect();
+  aplicarNavCacheada();                // evita el "flash" de Pronósticos al cargar
   if(accesoAdmin()) showPage('admin'); // apertura inmediata si entran por /#admin
   window.addEventListener('hashchange',()=>{ if(accesoAdmin()) showPage('admin'); });
   loadDashboard().then(()=>{
@@ -813,6 +814,7 @@ function calcPuntos(p,tab){
 }
 
 function renderDashboard(){
+  actualizarTabsDashboard();
   const todos=[...(allData.participantes||[])]
     .sort((a,b)=>calcPuntos(b,currentTab)-calcPuntos(a,currentTab))
     .slice(0,100); // máximo 100 registros en la tabla
@@ -868,11 +870,26 @@ function filtrarTabla(val){
   renderDashboard();
 }
 
+function hayElimDisponible(){
+  return FASES_ELIM_WIN.some(w=>elimState(w.id).known);
+}
+
 function showTab(tab,btn){
+  // "Tabla Eliminatorias" no se puede elegir hasta que la fase esté disponible
+  if(tab==='fase2' && !hayElimDisponible()) return;
   currentTab=tab;
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
   renderDashboard();
+}
+
+// Grisar "Tabla Eliminatorias" hasta que se habilite y marcar la solapa activa.
+function actualizarTabsDashboard(){
+  const hayElim=hayElimDisponible();
+  const f2=document.getElementById('tabFase2');
+  if(f2) f2.classList.toggle('disabled', !hayElim);
+  if(currentTab==='fase2' && !hayElim) currentTab='total';
+  [['tabFase1','fase1'],['tabFase2','fase2'],['tabTotal','total']].forEach(([id,t])=>{
+    const b=document.getElementById(id); if(b) b.classList.toggle('active', currentTab===t);
+  });
 }
 
 // ================================================================
@@ -961,7 +978,10 @@ function buildElimFormInner(win){
 
 function crucePickCard(label, clave, home, away){
   const sel=elimSel[clave]||'';
-  const btn=(team)=>`<button class="team-pick ${sel===team&&team?'sel':''}" ${team?`onclick="pickTeam('${clave}','${(team||'').replace(/'/g,"\\'")}')"`:'disabled'}>${team||'—'}</button>`;
+  const btn=(team)=>{
+    const isSel = !!team && sel===team;
+    return `<button class="team-pick ${isSel?'sel':''}" ${team?`onclick="pickTeam('${clave}','${(team||'').replace(/'/g,"\\'")}')"`:'disabled'}>${isSel?'✓ ':''}${team||'—'}</button>`;
+  };
   return `<div class="cruce-card"><div class="cruce-label">${label}</div><div class="cruce-teams">${btn(home)}${btn(away)}</div></div>`;
 }
 
@@ -1105,6 +1125,9 @@ function configurarNav(){
   // grupos ya terminó), salvo que el Admin fuerce mostrarla.
   const mostrarPro = !hayElim || forzarPro;
 
+  // Tabla activa por defecto: "1ra Ronda" en fase de grupos; "General" cuando ya hay eliminatorias
+  if(!window.__tabAutoSet){ window.__tabAutoSet=true; currentTab = hayElim ? 'total' : 'fase1'; }
+
   bElim.style.display  = hayElim   ? '' : 'none';
   bProde.style.display = mostrarPro ? '' : 'none';
 
@@ -1119,7 +1142,28 @@ function configurarNav(){
     orden=[bTablas,bElim,bProde,bAdmin]; activaBtn=bTablas; activaPage='dashboard';
   }
   orden.forEach(b=>nav.appendChild(b)); // reordena en el DOM
+  // Recordar la decisión para aplicarla al instante en la próxima carga (sin flash)
+  try{ localStorage.setItem('mund_nav', JSON.stringify({hayElim, mostrarPro, activaPage})); }catch(e){}
   if(accesoAdmin()) showPage('admin'); else showPage(activaPage, activaBtn);
+}
+
+// Aplica al instante (antes de consultar el backend) la última configuración de
+// solapas conocida, para que no se vea el "flash" de Pronósticos mientras carga.
+function aplicarNavCacheada(){
+  if(accesoAdmin()) return;
+  let c; try{ c=JSON.parse(localStorage.getItem('mund_nav')||'null'); }catch(e){ c=null; }
+  if(!c) return;
+  const bProde=document.getElementById('navProde');
+  const bElim =document.getElementById('navElim');
+  if(bElim)  bElim.style.display  = c.hayElim    ? '' : 'none';
+  if(bProde) bProde.style.display = c.mostrarPro ? '' : 'none';
+  if(c.activaPage){
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+    const pg=document.getElementById('page-'+c.activaPage); if(pg) pg.classList.add('active');
+    const map={prode:'navProde',dashboard:'navDashboard',elim:'navElim'};
+    const btn=document.getElementById(map[c.activaPage]); if(btn) btn.classList.add('active');
+  }
 }
 
 // Acceso discreto a Admin: solo por URL con #admin (o ?admin / ruta /admin).
