@@ -654,6 +654,7 @@ const SELECCIONES = [
     "Robin Risser (FRA)",
     "Theo Hernández (FRA)",
     "Warren Zaïre-Emery (FRA)",
+    "Ousmane Dembélé (FRA)",
     "William Saliba (FRA)"
   ] },
   { pais: "Ghana", players: [
