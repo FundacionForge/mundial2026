@@ -794,6 +794,8 @@ const SELECCIONES = [
     "Saleh Hardani (IRN)",
     "Saman Ghoddos (IRN)",
     "Shahriyar Moghanloo (IRN)",
+    "Ali Nemati (IRN)",
+    "Amirmohammad Razaghinia (IRN)",
     "Shoka Khalilzadeh (IRN)",
     "Taremi (IRN)"
   ] },
