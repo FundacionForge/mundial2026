@@ -654,6 +654,7 @@ let SELECCIONES = [
     "Robin Risser (FRA)",
     "Theo Hernández (FRA)",
     "Warren Zaïre-Emery (FRA)",
+    "Ousmane Dembélé (FRA)",
     "William Saliba (FRA)"
   ] },
   { pais: "Ghana", players: [
@@ -793,6 +794,8 @@ let SELECCIONES = [
     "Saleh Hardani (IRN)",
     "Saman Ghoddos (IRN)",
     "Shahriyar Moghanloo (IRN)",
+    "Ali Nemati (IRN)",
+    "Amirmohammad Razaghinia (IRN)",
     "Shoka Khalilzadeh (IRN)",
     "Taremi (IRN)"
   ] },
