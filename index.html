@@ -39,6 +39,8 @@ nav button:hover:not(.active){color:var(--text);background:rgba(255,255,255,.03)
 label.field-label{display:block;font-size:10px;font-weight:700;color:var(--text-dim);letter-spacing:2.5px;text-transform:uppercase;margin:1.1rem 0 6px}
 input[type=text],input[type=email],input[type=search],select{width:100%;background:rgba(2,13,4,.8);border:1px solid var(--verde-border);border-radius:10px;padding:12px 15px;color:var(--text);font-size:15px;font-family:'Barlow',sans-serif;outline:none;transition:border-color .2s,box-shadow .2s;appearance:none}
 input[type=text]:focus,input[type=email]:focus,input[type=search]:focus,select:focus{border-color:var(--verde);box-shadow:0 0 0 3px rgba(34,197,94,.12)}
+textarea{width:100%;background:rgba(2,13,4,.8);border:1px solid var(--verde-border);border-radius:10px;padding:10px 12px;color:var(--text);font-size:14px;font-family:'Barlow',sans-serif;outline:none;resize:vertical;line-height:1.5}
+textarea:focus{border-color:var(--verde);box-shadow:0 0 0 3px rgba(34,197,94,.12)}
 input::placeholder{color:#2d6a3f}
 select option{background:#0d2318}
 .select-wrap{position:relative}
@@ -588,6 +590,13 @@ select option{background:#0d2318}
       <div class="admin-title">⬇️ Exportar pronósticos</div>
       <div class="admin-desc">Descarga una planilla (CSV, se abre en Excel) con cada participante: sus elecciones (mejores, peores, goleadores, campeón), los puntos que le aportó cada una y el total, ordenado igual que la tabla. Útil para ver los equipos/jugadores más y menos elegidos.</div>
       <button class="btn btn-primary btn-sm" onclick="descargarExcel()">Descargar planilla (CSV)</button>
+    </div>
+
+    <!-- ABM EQUIPOS Y JUGADORES -->
+    <div class="admin-card" style="margin-bottom:1rem">
+      <div class="admin-title">🌎 Equipos y jugadores</div>
+      <div class="admin-desc">Mantén aquí la lista de selecciones y sus jugadores (sin tocar el código). Elige un equipo para editarlo, o "Nuevo equipo" para agregar. Los jugadores van uno por línea. Estos datos alimentan los selectores de mejores/peores/campeón y el buscador de goleadores.</div>
+      <div id="equiposAdmin"></div>
     </div>
 
     <div class="admin-card" style="margin-bottom:1rem">

@@ -18,8 +18,8 @@ const CONFIG = {
 const FECHA_MUNDIAL = new Date('2026-06-11T12:00:00');
 
 // 48 equipos clasificados al Mundial 2026 (USA · CAN · MEX)
-// Fuente: Jugadoresmundial2026.json (lista oficial de participantes)
-const EQUIPOS_2026 = [
+// Lista por defecto; si el backend tiene cargado el ABM de Selecciones, se reemplaza.
+let EQUIPOS_2026 = [
   "Alemania", "Arabia Saudita", "Argelia", "Argentina",
   "Australia", "Austria", "Bélgica", "Bosnia y Herzegovina",
   "Brasil", "Cabo Verde", "Canadá", "Colombia",
@@ -37,9 +37,9 @@ const EQUIPOS_2026 = [
 // ================================================================
 // JUGADORES — Lista oficial y FIJA de las 48 selecciones (1260 jugadores)
 // Fuente: Jugadoresmundial2026.json. Formato: "Nombre Apellido (ABR)".
-// No se modifica desde APIs externas (ver INIT).
+// Lista por defecto; si el backend tiene cargado el ABM de Selecciones, se reemplaza.
 // ================================================================
-const SELECCIONES = [
+let SELECCIONES = [
   { pais: "Alemania", players: [
     "Aleksandar Pavlovic (ALE)",
     "Alexander Nübel (ALE)",
@@ -1457,7 +1457,7 @@ const FASES_ELIM_WIN = [
 ];
 
 let currentStep=1, adminLogged=false, currentTab='fase1', filtroActivo='';
-let allData={participantes:[],puntosEquipos:{},golesJugadores:{},resultadosElim:{},campeonFinal:'',fechaLimite:'',cierresElim:{},forzarPronosticos:'',avisos:''};
+let allData={participantes:[],puntosEquipos:{},golesJugadores:{},resultadosElim:{},campeonFinal:'',fechaLimite:'',cierresElim:{},forzarPronosticos:'',avisos:'',selecciones:[]};
 let dashParts=[];          // participantes tal como se muestran en la tabla (para el click)
 let currentPronoIdx=-1;    // fila abierta en el visor de pronóstico
 let datosCargados=false;   // true tras la primera carga válida de getData (evita revertir al fallback)
@@ -1503,6 +1503,7 @@ window.addEventListener('load',()=>{
   if(accesoAdmin()) showPage('admin'); // apertura inmediata si entran por /#admin
   window.addEventListener('hashchange',()=>{ if(accesoAdmin()) showPage('admin'); });
   loadDashboard().then(()=>{
+    aplicarSeleccionesBackend(); // usa el ABM de equipos/jugadores si está cargado
     if(!window.__navConfigurada){ window.__navConfigurada=true; configurarNav(); }
     mostrarAvisoDelDia();
   });
@@ -1581,10 +1582,23 @@ function buildGoleadoresPickers(){
 
 function populateCampeonSelect(){
   const opts=EQUIPOS_2026.map(e=>`<option value="${e}">${e}</option>`).join('');
-  ['campeon','campeonFinal'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el) el.innerHTML+=opts;
-  });
+  // idempotente: resetea al placeholder y agrega las opciones (permite reconstruir)
+  const el1=document.getElementById('campeon');
+  if(el1) el1.innerHTML='<option value="" disabled selected>Elige tu campeón</option>'+opts;
+  const el2=document.getElementById('campeonFinal');
+  if(el2) el2.innerHTML='<option value="">— Sin definir aún —</option>'+opts;
+}
+
+// Aplica la lista de equipos/jugadores del backend (ABM) si está cargada,
+// reemplazando la lista por defecto, y reconstruye los selectores.
+function aplicarSeleccionesBackend(){
+  const sel=allData.selecciones;
+  if(!Array.isArray(sel) || !sel.length) return; // sin ABM cargado → se usa la lista fija
+  SELECCIONES=sel;
+  EQUIPOS_2026=[...new Set(sel.map(s=>s.pais))].sort((a,b)=>a.localeCompare(b,'es'));
+  JUGADORES_MUNDIAL=sel.flatMap(s=>s.players||[]).filter((v,i,a)=>a.indexOf(v)===i).sort();
+  buildTeamPickers();
+  populateCampeonSelect();
 }
 
 // ---- AUTOCOMPLETE GOLEADORES ----
@@ -2374,6 +2388,7 @@ async function loadAdminData(){
   renderDeadlinesElimAdmin();
   renderForzarProAdmin();
   renderAvisosAdmin();
+  renderEquiposAdmin();
 }
 
 // ---- ADMIN: forzar visibilidad de la solapa Pronósticos ----
@@ -2468,6 +2483,89 @@ function mostrarAvisoDelDia(){
 function cerrarAviso(){
   try{ localStorage.setItem('mund_aviso_'+fechaHoyLocal(),'1'); }catch(e){}
   const ov=document.getElementById('avisoOverlay'); if(ov) ov.style.display='none';
+}
+
+// ================================================================
+// ABM EQUIPOS Y JUGADORES (Admin)
+// ================================================================
+// Copia de trabajo: usa lo del backend si está cargado; si no, la lista por defecto.
+function getSeleccionesActual(){
+  const sel=allData.selecciones;
+  const base=(Array.isArray(sel) && sel.length)?sel:SELECCIONES;
+  return base.map(s=>({pais:s.pais, players:[...(s.players||[])]}));
+}
+
+function renderEquiposAdmin(seleccionar){
+  const wrap=document.getElementById('equiposAdmin'); if(!wrap) return;
+  const arr=getSeleccionesActual();
+  const usandoBackend=Array.isArray(allData.selecciones) && allData.selecciones.length>0;
+  const opts=arr.map(s=>`<option value="${(s.pais||'').replace(/"/g,'&quot;')}">${s.pais} (${(s.players||[]).length})</option>`).join('');
+  const totalJug=arr.reduce((a,s)=>a+(s.players||[]).length,0);
+  wrap.innerHTML=`
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">${arr.length} equipos · ${totalJug} jugadores — ${usandoBackend?'datos desde la base':'lista por defecto (todavía no inicializada)'}</div>
+    ${usandoBackend?'':'<button class="btn btn-secondary btn-sm" style="margin-bottom:10px" onclick="inicializarSelecciones()">Inicializar desde la lista actual</button>'}
+    <select id="eqSelect" onchange="cargarEquipoEnForm()" style="width:100%;font-size:13px;padding:8px 10px;margin-bottom:8px">
+      <option value="">➕ Nuevo equipo…</option>
+      ${opts}
+    </select>
+    <input type="text" id="eqNombre" placeholder="Nombre del equipo" style="margin-bottom:8px">
+    <textarea id="eqJugadores" placeholder="Jugadores, uno por línea" rows="8"></textarea>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px">
+      <button class="btn btn-primary btn-sm" onclick="guardarEquipo()">Guardar equipo</button>
+      <button class="btn btn-secondary btn-sm" onclick="nuevoEquipo()">Nuevo</button>
+      <button class="btn btn-secondary btn-sm" onclick="eliminarEquipo()" style="border-color:rgba(248,113,113,.4);color:#f87171">Eliminar equipo</button>
+    </div>
+    <div id="equiposStatus" style="font-size:12px;color:var(--text-muted);margin-top:8px"></div>`;
+  if(seleccionar){ const s=document.getElementById('eqSelect'); if(s){ s.value=seleccionar; cargarEquipoEnForm(); } }
+}
+
+function cargarEquipoEnForm(){
+  const pais=document.getElementById('eqSelect').value;
+  const eq=getSeleccionesActual().find(s=>s.pais===pais);
+  document.getElementById('eqNombre').value = eq?eq.pais:'';
+  document.getElementById('eqJugadores').value = eq?(eq.players||[]).join('\n'):'';
+}
+
+function nuevoEquipo(){
+  document.getElementById('eqSelect').value='';
+  document.getElementById('eqNombre').value='';
+  document.getElementById('eqJugadores').value='';
+  document.getElementById('eqNombre').focus();
+}
+
+async function persistirSelecciones(arr, msg, seleccionar){
+  arr.sort((a,b)=>(a.pais||'').localeCompare(b.pais||'','es'));
+  await saveToSheet({action:'updateSelecciones', selecciones:arr});
+  allData.selecciones=arr;
+  aplicarSeleccionesBackend();   // refresca EQUIPOS_2026/JUGADORES y los selectores del formulario
+  renderEquiposAdmin(seleccionar);
+  renderAdminPuntosFase();       // la lista de "Puntos fase de grupos" usa EQUIPOS_2026
+  renderAdminEliminatorias();
+  notify(msg||'Guardado ✓');
+}
+
+async function guardarEquipo(){
+  const original=document.getElementById('eqSelect').value;   // '' si es nuevo
+  const nombre=document.getElementById('eqNombre').value.trim();
+  const players=document.getElementById('eqJugadores').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  if(!nombre){ notify('Ingresa el nombre del equipo'); return; }
+  const arr=getSeleccionesActual().filter(s=>s.pais!==original && s.pais!==nombre);
+  arr.push({pais:nombre, players});
+  await persistirSelecciones(arr, 'Equipo guardado ✓', nombre);
+}
+
+async function eliminarEquipo(){
+  const pais=document.getElementById('eqSelect').value;
+  if(!pais){ notify('Elige un equipo de la lista para eliminar'); return; }
+  if(!confirm('¿Eliminar el equipo "'+pais+'" y todos sus jugadores?')) return;
+  const arr=getSeleccionesActual().filter(s=>s.pais!==pais);
+  await persistirSelecciones(arr, 'Equipo eliminado ✓', '');
+}
+
+async function inicializarSelecciones(){
+  if(!confirm('¿Inicializar la base con los '+SELECCIONES.length+' equipos de la lista actual? Después puedes editarlos.')) return;
+  const arr=SELECCIONES.map(s=>({pais:s.pais, players:[...(s.players||[])]}));
+  await persistirSelecciones(arr, 'Base inicializada ✓', '');
 }
 
 // ---- ADMIN FECHA LÍMITE ----
