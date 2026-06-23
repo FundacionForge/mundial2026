@@ -3,8 +3,8 @@
 // ================================================================
 // Backends: producción (datos reales) y prueba (planilla de testing).
 const BACKENDS = {
-  prod: 'https://script.google.com/macros/s/AKfycbz-xTznVS-HRL2FRJUpKijA6E7Isc1sAZBr313agEve-F2nMYO1OQYbcdlk2KKpqVIqRA/exec',
-  test: 'https://script.google.com/macros/s/AKfycbxzK6Qef8Ql5sOFRcgGhYlvmSVqH3gT3evFxaxTTltv26WULVvynFf12aLBZa2xQGW6/exec',
+  prod: 'https://script.google.com/macros/s/AKfycbz6APD505hYkYaTNe3zf7f93LQzrbtpXmXl-1UA0wgIvGcOrWYoNhR995KBrCOkVSUvjA/exec',
+  test: 'https://script.google.com/macros/s/AKfycbzwRGR_-IiYD3iPQ4GdlXctJeDDUV2ISu-BlRXn661QYUYUvY9ex5a2SyvtV_gwVw7qUA/exec',
 };
 // El backend de PRODUCCIÓN se usa SOLO en el dominio oficial. Cualquier otro lado
 // (localhost, staging, etc.) usa el de PRUEBA → imposible ensuciar los datos reales.
@@ -2093,10 +2093,26 @@ function clavesBaseVentana(win){
 function elimState(win){
   const base=clavesBaseVentana(win);
   const cruces=allData.crucesElim||{};
-  const known = base.length>0 && base.every(k=>cruces[k] && cruces[k].home && cruces[k].away);
+  // La ventana queda "abierta" apenas hay AL MENOS UN cruce con dupla definida:
+  // así los participantes pronostican lo ya cargado sin esperar al resto.
+  const known = base.some(k=>cruces[k] && cruces[k].home && cruces[k].away);
   const dl=(allData.deadlines||{})[win]||'';
   const closed = dl ? (new Date() > new Date(dl)) : false;
   return {known, dl, closed};
+}
+
+// Cruces de una ventana que YA tienen dupla definida (los únicos pronosticables).
+// En la ventana semifinal, final_1 y 3ro_1 se derivan de los ganadores elegidos.
+function clavesPickables(win){
+  const cruces=allData.crucesElim||{};
+  if(win!=='semifinal'){
+    return clavesDeVentana(win).filter(k=>cruces[k] && cruces[k].home && cruces[k].away);
+  }
+  const out=[];
+  ['semis_1','semis_2'].forEach(k=>{ if(cruces[k] && cruces[k].home && cruces[k].away) out.push(k); });
+  if([elimSel['semis_1'],elimSel['semis_2']].filter(Boolean).length===2) out.push('final_1');
+  if([perdedorSemi('semis_1'),perdedorSemi('semis_2')].filter(Boolean).length===2) out.push('3ro_1');
+  return out;
 }
 
 function identificarElim(){
@@ -2128,6 +2144,7 @@ function renderElimContent(part){
     clavesDeVentana(open.id).forEach(k=>{ if(part.picks && part.picks[k]) elimSel[k]=part.picks[k]; });
     html+=`<div class="elim-win-title">${open.label} <span class="elim-badge open">Abierta</span></div>
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:.75rem">Cierra: <span id="elimDeadlineTxt">—</span> · faltan <span id="elimCountdown" style="color:var(--gold);font-weight:700">—</span></div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:.75rem">Pronosticá los cruces ya definidos; si aún faltan cargarse algunos, podés volver más tarde a completarlos (se suman a lo ya guardado).</div>
       <div id="elimFormArea">${buildElimFormInner(open.id)}</div>
       <button class="btn btn-primary" style="margin-top:1rem;width:100%" onclick="submitElimPicks()">💾 Guardar pronóstico de ${open.label}</button>`;
   } else {
@@ -2148,6 +2165,9 @@ function buildElimFormInner(win){
 }
 
 function crucePickCard(label, clave, home, away){
+  if(!home || !away){
+    return `<div class="cruce-card"><div class="cruce-label">${label}</div><div style="font-size:12px;color:var(--text-muted)">Cruce aún no definido. Se habilitará cuando se carguen los equipos.</div></div>`;
+  }
   const sel=elimSel[clave]||'';
   const btn=(team)=>{
     const isSel = !!team && sel===team;
@@ -2213,9 +2233,11 @@ function submitElimPicks(){
   if(!win) return;
   // Re-chequeo de cierre del lado cliente
   if(elimState(win).closed){ notify('La ventana de esta fase ya cerró.'); renderElimContent(currentElimPart); return; }
-  const req=clavesDeVentana(win);
+  // Solo se exigen los cruces YA definidos; los que falten cargar quedan para después.
+  const req=clavesPickables(win);
+  if(!req.length){ notify('Todavía no hay cruces definidos para pronosticar en esta fase.'); return; }
   const faltan=req.filter(k=>!elimSel[k]);
-  if(faltan.length){ notify('Completa todos los pronósticos de la fase antes de guardar.'); return; }
+  if(faltan.length){ notify('Completá los cruces ya definidos antes de guardar.'); return; }
   const picks={};
   req.forEach(k=>picks[k]=elimSel[k]);
   saveToSheet({action:'updatePicks', email:currentElimEmail, picks:picks, fase:win});
@@ -2686,20 +2708,34 @@ function renderAdminPuntosFase(){
     </div>`).join('');
 }
 
+// Convierte un ISO guardado a formato 'YYYY-MM-DDTHH:mm' (datetime-local) en hora local.
+function tsToLocalInput(iso){
+  if(!iso) return '';
+  const d=new Date(iso); if(isNaN(d)) return '';
+  const p=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
 function renderAdminEliminatorias(){
-  const opts='<option value="">— Sin resultado —</option>'+EQUIPOS_2026.map(e=>`<option value="${e}">${e}</option>`).join('');
+  const teamOpts=sel=>'<option value="">— equipo —</option>'+EQUIPOS_2026.map(e=>`<option value="${e}"${sel===e?' selected':''}>${e}</option>`).join('');
+  const winOpts=sel=>'<option value="">— Sin resultado —</option>'+EQUIPOS_2026.map(e=>`<option value="${e}"${sel===e?' selected':''}>${e}</option>`).join('');
   let html='';
   FASES_ELIM.forEach(fase=>{
     html+=`<div class="bracket-section"><div class="bracket-section-title">⚡ ${fase.label} — ${fase.pts} pt${fase.pts>1?'s':''} por acierto</div>`;
     for(let c=1;c<=fase.cruces;c++){
       const key=`${fase.id}_${c}`;
-      const val=allData.resultadosElim[key]||'';
-      html+=`<div class="result-row">
-        <span class="vs">Cruce ${c}</span>
-        <div class="select-wrap" style="flex:1">
-          <select data-elim="${key}" style="font-size:12px;padding:7px 10px">
-            ${opts.replace(`value="${val}"`,`value="${val}" selected`)}
-          </select>
+      const cru=(allData.crucesElim||{})[key]||{};
+      const val=allData.resultadosElim[key]||cru.winner||'';
+      html+=`<div class="cruce-card" style="margin-bottom:8px">
+        <div class="cruce-label" style="margin-bottom:6px">Cruce ${c}</div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <div class="select-wrap" style="flex:1;min-width:120px"><select data-home="${key}" style="font-size:12px;padding:7px 10px">${teamOpts(cru.home||'')}</select></div>
+          <span class="vs" style="font-size:11px">vs</span>
+          <div class="select-wrap" style="flex:1;min-width:120px"><select data-away="${key}" style="font-size:12px;padding:7px 10px">${teamOpts(cru.away||'')}</select></div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px">
+          <input type="datetime-local" data-ts="${key}" value="${tsToLocalInput(cru.ts||'')}" style="flex:1;min-width:150px;font-size:12px;padding:6px 8px">
+          <div class="select-wrap" style="flex:1;min-width:120px"><select data-elim="${key}" style="font-size:12px;padding:7px 10px">${winOpts(val)}</select></div>
         </div>
       </div>`;
     }
@@ -2717,8 +2753,26 @@ async function guardarPuntosFase(){
   await saveToSheet({action:'updatePuntosFase',puntos});allData.puntosEquipos=puntos;notify('Puntos guardados ✓');renderDashboard();
 }
 async function guardarEliminatorias(){
+  // Duplas (local/visitante/horario) de cada cruce
+  const cruces={};
+  document.querySelectorAll('[data-home]').forEach(s=>{ (cruces[s.dataset.home]=cruces[s.dataset.home]||{}).home=s.value||''; });
+  document.querySelectorAll('[data-away]').forEach(s=>{ (cruces[s.dataset.away]=cruces[s.dataset.away]||{}).away=s.value||''; });
+  document.querySelectorAll('[data-ts]').forEach(i=>{
+    const c=cruces[i.dataset.ts]=cruces[i.dataset.ts]||{};
+    c.ts = i.value ? new Date(i.value).toISOString() : '';
+  });
+  // Ganadores
   const resultados={};document.querySelectorAll('[data-elim]').forEach(s=>{if(s.value)resultados[s.dataset.elim]=s.value;});
-  await saveToSheet({action:'updateEliminatorias',resultados});allData.resultadosElim=resultados;notify('Resultados guardados ✓');renderDashboard();
+  await saveToSheet({action:'updateCruces',cruces});
+  await saveToSheet({action:'updateEliminatorias',resultados});
+  // Reflejo local optimista
+  allData.crucesElim=allData.crucesElim||{};
+  Object.entries(cruces).forEach(([k,f])=>{
+    const prev=allData.crucesElim[k]||{};
+    allData.crucesElim[k]={...prev,home:f.home,away:f.away,ts:f.ts,winner:resultados[k]||prev.winner||''};
+  });
+  allData.resultadosElim=resultados;
+  notify('Cruces y resultados guardados ✓');renderDashboard();
 }
 async function guardarCampeon(){
   const val=document.getElementById('campeonFinal').value;
