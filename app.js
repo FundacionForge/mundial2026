@@ -4,7 +4,7 @@
 // Backends: producción (datos reales) y prueba (planilla de testing).
 const BACKENDS = {
   prod: 'https://script.google.com/macros/s/AKfycbz-xTznVS-HRL2FRJUpKijA6E7Isc1sAZBr313agEve-F2nMYO1OQYbcdlk2KKpqVIqRA/exec',
-  test: 'https://script.google.com/macros/s/AKfycbxzK6Qef8Ql5sOFRcgGhYlvmSVqH3gT3evFxaxTTltv26WULVvynFf12aLBZa2xQGW6/exec',
+  test: 'https://script.google.com/macros/s/AKfycbzwRGR_-IiYD3iPQ4GdlXctJeDDUV2ISu-BlRXn661QYUYUvY9ex5a2SyvtV_gwVw7qUA/exec',
 };
 // El backend de PRODUCCIÓN se usa SOLO en el dominio oficial. Cualquier otro lado
 // (localhost, staging, etc.) usa el de PRUEBA → imposible ensuciar los datos reales.
