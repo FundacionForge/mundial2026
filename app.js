@@ -1450,6 +1450,17 @@ const FASES_ELIM = [
   {id:'final',  label:'Final',                   pts:20, cruces:1},
 ];
 
+// Numeración oficial FIFA del Mundial 2026 (104 partidos): grupos 1–72 y la fase
+// eliminatoria desde el 73. Base del primer partido de cada ronda.
+const FIFA_PARTIDO_BASE = { '16avos':73, '8vos':89, '4tos':97, 'semis':101, '3ro':103, 'final':104 };
+// Etiqueta "Partido N" a partir de la clave de cruce (ej. '16avos_3' → 'Partido 75').
+function partidoLabel(clave){
+  const m = String(clave||'').match(/^(.+)_(\d+)$/);
+  if(!m) return clave||'';
+  const base = FIFA_PARTIDO_BASE[m[1]];
+  return base===undefined ? ('Cruce '+m[2]) : ('Partido '+(base + (parseInt(m[2],10)-1)));
+}
+
 // Ventanas de carga de pronóstico (el cierre se aplica 12 hs antes del primer
 // partido de la fase). "semifinal" agrupa semis + 3er puesto + final en una sola carga.
 const FASES_ELIM_WIN = [
@@ -2158,15 +2169,15 @@ function renderElimContent(part){
 
 function buildElimFormInner(win){
   if(win==='semifinal') return buildSemifinalForm();
-  return clavesDeVentana(win).map((k,idx)=>{
+  return clavesDeVentana(win).map((k)=>{
     const c=cr(k);
-    return crucePickCard('Cruce '+(idx+1), k, c.home, c.away);
+    return crucePickCard(partidoLabel(k), k, c.home, c.away);
   }).join('');
 }
 
 function crucePickCard(label, clave, home, away){
   if(!home || !away){
-    return `<div class="cruce-card"><div class="cruce-label">${label}</div><div style="font-size:12px;color:var(--text-muted)">Cruce aún no definido. Se habilitará cuando se carguen los equipos.</div></div>`;
+    return `<div class="cruce-card"><div class="cruce-label">${label}</div><div style="font-size:12px;color:var(--text-muted)">Cruce aún no definido.</div></div>`;
   }
   const sel=elimSel[clave]||'';
   const btn=(team)=>{
@@ -2727,7 +2738,7 @@ function renderAdminEliminatorias(){
       const cru=(allData.crucesElim||{})[key]||{};
       const val=allData.resultadosElim[key]||cru.winner||'';
       html+=`<div class="cruce-card" style="margin-bottom:8px">
-        <div class="cruce-label" style="margin-bottom:6px">Cruce ${c}</div>
+        <div class="cruce-label" style="margin-bottom:6px">${partidoLabel(key)}</div>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
           <div class="select-wrap" style="flex:1;min-width:120px"><select data-home="${key}" style="font-size:12px;padding:7px 10px">${teamOpts(cru.home||'')}</select></div>
           <span class="vs" style="font-size:11px">vs</span>
