@@ -1,4 +1,4 @@
-// ================================================================
+﻿// ================================================================
 // CONFIG
 // ================================================================
 // Backends: producción (datos reales) y prueba (planilla de testing).
@@ -2738,7 +2738,10 @@ function renderAdminEliminatorias(){
       const cru=(allData.crucesElim||{})[key]||{};
       const val=allData.resultadosElim[key]||cru.winner||'';
       html+=`<div class="cruce-card" style="margin-bottom:8px">
-        <div class="cruce-label" style="margin-bottom:6px">${partidoLabel(key)}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">
+          <span class="cruce-label">${partidoLabel(key)}</span>
+          ${btnFaltantes(key)}
+        </div>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
           <div class="select-wrap" style="flex:1;min-width:120px"><select data-home="${key}" style="font-size:12px;padding:7px 10px">${teamOpts(cru.home||'')}</select></div>
           <span class="vs" style="font-size:11px">vs</span>
@@ -2753,6 +2756,88 @@ function renderAdminEliminatorias(){
     html+='</div>';
   });
   document.getElementById('eliminatoriasAdmin').innerHTML=html;
+}
+
+// ¿Se puede completar ya este cruce? (los participantes solo pronostican lo definido)
+// final_1 y 3ro_1 se derivan de las semis: quedan disponibles cuando ambas semis tienen dupla.
+function cruceCompletable(key){
+  const cruces=allData.crucesElim||{};
+  const defin=c=>!!(c && c.home && c.away);
+  if(key==='final_1' || key==='3ro_1') return defin(cruces['semis_1']) && defin(cruces['semis_2']);
+  return defin(cruces[key]);
+}
+// Participantes (los que ya completaron la 1ra fase = están inscriptos) sin pick en este cruce.
+function faltantesDeCruce(key){
+  return (allData.participantes||[]).filter(p=>!(p.picks && p.picks[key]));
+}
+// Botoncito al lado del cruce: deshabilitado salvo que alguien siga sin completarlo.
+function btnFaltantes(key){
+  const total=(allData.participantes||[]).length;
+  if(!total) return '';
+  if(!cruceCompletable(key))
+    return `<button class="falt-btn na" disabled title="El cruce aún no está definido">·</button>`;
+  const faltan=faltantesDeCruce(key).length;
+  if(faltan===0)
+    return `<button class="falt-btn done" disabled title="Los ${total} pronosticadores ya completaron este cruce">✓</button>`;
+  return `<button class="falt-btn pend" onclick="mostrarFaltantes('${key}')" title="${faltan} de ${total} aún no completaron este cruce — ver y recordar">📧 ${faltan}</button>`;
+}
+
+// Modal con la lista de pendientes (exportable) de un cruce.
+let _faltKey='';
+function mostrarFaltantes(key){
+  _faltKey=key;
+  const total=(allData.participantes||[]).length;
+  const faltan=faltantesDeCruce(key);
+  const lista=faltan.length
+    ? faltan.map((p,i)=>`<div class="result-row" style="justify-content:space-between;gap:10px">
+        <span style="font-size:13px"><strong>${i+1}.</strong> ${p.nombre||'—'}</span>
+        <span style="font-size:12px;color:var(--text-dim)">${p.email||'—'}</span>
+      </div>`).join('')
+    : '<div style="color:var(--text-muted);font-size:13px">Nadie pendiente 🎉</div>';
+  document.getElementById('faltantesTitle').textContent='📧 Pendientes · '+partidoLabel(key);
+  document.getElementById('faltantesBody').innerHTML=`
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px">
+      <strong style="color:var(--gold)">${faltan.length}</strong> de ${total} pronosticadores aún no completaron este cruce.
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+      <button class="btn btn-primary btn-sm" style="flex:1;min-width:140px" onclick="copiarFaltantes()">📋 Copiar emails</button>
+      <button class="btn btn-secondary btn-sm" style="flex:1;min-width:140px" onclick="descargarFaltantes()">⬇️ Descargar CSV</button>
+    </div>
+    ${lista}`;
+  document.getElementById('faltantesOverlay').style.display='flex';
+}
+function cerrarFaltantes(){ document.getElementById('faltantesOverlay').style.display='none'; }
+function _faltEmails(){
+  return faltantesDeCruce(_faltKey).map(p=>(p.email||'').trim()).filter(Boolean);
+}
+function copiarFaltantes(){
+  const emails=_faltEmails();
+  if(!emails.length){ notify('No hay emails para copiar'); return; }
+  const txt=emails.join(', ');
+  const done=()=>notify('Emails copiados ✓ ('+emails.length+')');
+  if(navigator.clipboard && navigator.clipboard.writeText)
+    navigator.clipboard.writeText(txt).then(done).catch(()=>_copiaFallback(txt,done));
+  else _copiaFallback(txt,done);
+}
+function _copiaFallback(txt,done){
+  const ta=document.createElement('textarea');
+  ta.value=txt; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try{ document.execCommand('copy'); done&&done(); }catch(e){ notify('No se pudo copiar'); }
+  document.body.removeChild(ta);
+}
+function descargarFaltantes(){
+  const parts=faltantesDeCruce(_faltKey);
+  if(!parts.length){ notify('No hay pendientes'); return; }
+  const cell=s=>'"'+String(s==null?'':s).replace(/"/g,'""')+'"';
+  const lines=['Nombre;Email;Pais', ...parts.map(p=>[cell(p.nombre),cell(p.email),cell(p.pais)].join(';'))];
+  const csv='﻿'+lines.join('\r\n'); // BOM para que Excel lea bien los acentos
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='pendientes_'+_faltKey+'.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
 async function guardarGoles(){
@@ -2870,9 +2955,33 @@ function renderPronoContenido(p){
     <div class="summary-group"><div class="summary-title">⚡ Eliminatorias</div>${elim}</div>`;
 }
 
+// Fases eliminatorias para el export, con su etiqueta de columna (en orden Final → 3er puesto).
+const FASES_EXPORT = ['16avos','8vos','4tos','semis','final','3ro'].map(id=>{
+  const cols={'16avos':'16vos','8vos':'8vos','4tos':'4tos','semis':'Semis','final':'Final','3ro':'3er Puesto'};
+  return { ...FASES_ELIM.find(f=>f.id===id), col:cols[id] };
+});
+// Pronóstico de un participante en una fase eliminatoria, por partido.
+// cruces: array de {pick, pts} por cada partido (pick='' si no eligió, pts=puntos de ese acierto).
+// total: suma de puntos de la fase (0 mientras no se haya jugado / cargado el resultado).
+function elimFaseExport(p, fase){
+  const getPick=key => ((p.picks && p.picks[key]) || p['pick_'+key] || '').toString().trim();
+  const res=allData.resultadosElim||{};
+  let total=0; const cruces=[];
+  for(let c=1;c<=fase.cruces;c++){
+    const key=`${fase.id}_${c}`;
+    const pick=getPick(key);
+    const ganador=(res[key]||'').trim();
+    const pts=(ganador && pick===ganador) ? fase.pts : 0;
+    total+=pts;
+    cruces.push({ pick, pts });
+  }
+  return { cruces, total };
+}
+
 // ================================================================
 // EXPORTAR A CSV (se abre en Excel) — Admin
 // Filas: participantes. Columnas: cada elección + los puntos que aportó +
+// pronóstico y puntos por fase eliminatoria +
 // totales (1ra Ronda / Eliminatorias / General), ordenado como la tabla.
 // ================================================================
 function descargarExcel(){
@@ -2887,7 +2996,15 @@ function descargarExcel(){
   for(let i=1;i<=5;i++) header.push('Mejor '+i,'Pts M'+i);
   for(let i=1;i<=5;i++) header.push('Peor '+i,'Pts P'+i);
   for(let i=1;i<=5;i++) header.push('Goleador '+i,'Goles G'+i);
-  header.push('Campeón','Bonus Campeón','Pts 1ra Ronda','Pts Eliminatorias','Total General');
+  header.push('Campeón','Bonus Campeón');
+  FASES_EXPORT.forEach(f=>{
+    for(let c=1;c<=f.cruces;c++){
+      const lbl=f.col+' · '+partidoLabel(`${f.id}_${c}`);
+      header.push(lbl, lbl+' · pts');
+    }
+    header.push('Puntos '+f.col);
+  });
+  header.push('Pts 1ra Ronda','Pts Eliminatorias','Total General');
 
   const lines=[header.map(cell).join(';')];
   parts.forEach(p=>{
@@ -2898,7 +3015,9 @@ function descargarExcel(){
     for(let i=0;i<5;i++){ const t=peores[i]||'';  row.push(t, t?(-(PE[t]||0)):''); }
     for(let i=0;i<5;i++){ const g=goles[i]||'';   row.push(g, g?(GJ[g]||0):''); }
     const bonus=(camp&&(p.campeon||'').trim()===camp)?20:0;
-    row.push(p.campeon||'', bonus, calcPuntos(p,'fase1'), calcPuntos(p,'fase2'), calcPuntos(p,'total'));
+    row.push(p.campeon||'', bonus);
+    FASES_EXPORT.forEach(f=>{ const e=elimFaseExport(p,f); e.cruces.forEach(cr=>row.push(cr.pick, cr.pts)); row.push(e.total); });
+    row.push(calcPuntos(p,'fase1'), calcPuntos(p,'fase2'), calcPuntos(p,'total'));
     lines.push(row.map(cell).join(';'));
   });
 

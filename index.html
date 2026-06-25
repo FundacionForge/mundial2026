@@ -79,6 +79,12 @@ select option{background:#0d2318}
 .jug-close:hover{border-color:var(--verde);color:var(--verde)}
 .jug-modal-body{overflow-y:auto;padding-right:6px;margin-top:4px}
 .jug-grupo{margin-bottom:14px}
+/* Botón "ver pendientes" al lado de cada cruce en Admin */
+.falt-btn{font-size:11px;padding:3px 9px;border-radius:7px;border:1px solid var(--verde-border);background:transparent;color:var(--text-muted);cursor:default;flex-shrink:0;line-height:1.4;white-space:nowrap}
+.falt-btn.na{opacity:.4}
+.falt-btn.done{border-color:var(--verde);color:var(--verde)}
+.falt-btn.pend{border-color:var(--gold);color:var(--gold);cursor:pointer;font-weight:700}
+.falt-btn.pend:hover{background:var(--gold);color:#000}
 .jug-pais{font-size:13px;font-weight:800;color:var(--verde);letter-spacing:.5px;margin-bottom:7px;border-bottom:1px solid var(--verde-border);padding-bottom:4px;position:sticky;top:0;background:var(--verde-card)}
 .jug-chips{display:flex;flex-wrap:wrap;gap:6px}
 .jug-chip{background:rgba(2,13,4,.6);border:1px solid var(--verde-border);color:var(--text);border-radius:16px;padding:5px 11px;font-size:12.5px;cursor:pointer;transition:all .12s}
@@ -276,6 +282,17 @@ select option{background:#0d2318}
       <button class="jug-close" onclick="cerrarPronostico()" title="Cerrar">✕</button>
     </div>
     <div class="jug-modal-body" id="pronoBody"></div>
+  </div>
+</div>
+
+<!-- Admin: pronosticadores que aún no completaron un cruce -->
+<div class="login-overlay" id="faltantesOverlay" style="display:none">
+  <div class="jug-modal">
+    <div class="jug-modal-head">
+      <div class="jug-modal-title" id="faltantesTitle">Pendientes</div>
+      <button class="jug-close" onclick="cerrarFaltantes()" title="Cerrar">✕</button>
+    </div>
+    <div class="jug-modal-body" id="faltantesBody"></div>
   </div>
 </div>
 
