@@ -2129,7 +2129,7 @@ function fmtCierreCorto(iso){
 function fmtFaltan(ms){
   if(ms<=0) return 'cerrado';
   const d=Math.floor(ms/86400000), h=Math.floor(ms%86400000/3600000), m=Math.floor(ms%3600000/60000), s=Math.floor(ms%60000/1000);
-  if(d>0) return `${d}d ${h}h ${m}m`;
+  if(d>0) return `${d}d ${h}h ${m}m ${s}s`;
   if(h>0) return `${h}h ${m}m ${s}s`;
   return `${m}m ${s}s`;
 }
