@@ -2077,7 +2077,7 @@ function actualizarTabsDashboard(){
 // ================================================================
 // ELIMINATORIAS — carga de pronósticos por fase (por email)
 // ================================================================
-let currentElimEmail='', currentElimPart=null, currentElimWin='', elimSel={}, elimCountdownTimer=null;
+let currentElimEmail='', currentElimPart=null, currentElimWin='', elimSel={};
 
 function loadElimPage(){
   // Refresca datos y, si ya estaba identificado, re-renderiza
@@ -2101,15 +2101,42 @@ function clavesBaseVentana(win){
   return win==='semifinal' ? ['semis_1','semis_2'] : clavesDeVentana(win);
 }
 
+// Horas antes del partido en que cierra cada cruce (debe coincidir con el backend).
+const HORAS_ANTES_CIERRE = 12;
+
+// Cierre (ISO) de UN cruce: si la fase tiene override manual, gana; si no, 12 hs antes
+// del kickoff de ESE cruce. '' si todavía no hay horario cargado.
+function cierreDeCruce(win, clave){
+  const ov=(allData.cierresElim||{})[win];
+  if(ov) return ov;
+  const c=cr(clave);
+  if(c && c.ts){
+    const t=new Date(c.ts).getTime();
+    if(!isNaN(t)) return new Date(t - HORAS_ANTES_CIERRE*3600*1000).toISOString();
+  }
+  return '';
+}
+function cruceCerrado(win, clave){
+  const dl=cierreDeCruce(win, clave);
+  return dl ? (new Date() > new Date(dl)) : false;
+}
+// Formato corto de cierre para mostrar en cada cruce: "27/06, 11:59" (siempre 24h).
+function fmtCierreCorto(iso){
+  if(!iso) return '';
+  return new Date(iso).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});
+}
+
 function elimState(win){
   const base=clavesBaseVentana(win);
   const cruces=allData.crucesElim||{};
   // La ventana queda "abierta" apenas hay AL MENOS UN cruce con dupla definida:
   // así los participantes pronostican lo ya cargado sin esperar al resto.
   const known = base.some(k=>cruces[k] && cruces[k].home && cruces[k].away);
-  const dl=(allData.deadlines||{})[win]||'';
-  const closed = dl ? (new Date() > new Date(dl)) : false;
-  return {known, dl, closed};
+  // La ventana se considera "cerrada" sólo cuando TODOS sus cruces definidos cerraron
+  // (cada cruce cierra por separado, 12 hs antes de su propio partido).
+  const definidos = clavesDeVentana(win).filter(k=>cruces[k] && cruces[k].home && cruces[k].away);
+  const closed = known && definidos.length>0 && definidos.every(k=>cruceCerrado(win,k));
+  return {known, closed};
 }
 
 // Cruces de una ventana que YA tienen dupla definida (los únicos pronosticables).
@@ -2154,8 +2181,7 @@ function renderElimContent(part){
     elimSel={};
     clavesDeVentana(open.id).forEach(k=>{ if(part.picks && part.picks[k]) elimSel[k]=part.picks[k]; });
     html+=`<div class="elim-win-title">${open.label} <span class="elim-badge open">Abierta</span></div>
-      <div style="font-size:12px;color:var(--text-muted);margin-bottom:.75rem">Cierra: <span id="elimDeadlineTxt">—</span> · faltan <span id="elimCountdown" style="color:var(--gold);font-weight:700">—</span></div>
-      <div style="font-size:12px;color:var(--text-muted);margin-bottom:.75rem">Pronosticá los cruces ya definidos; si aún faltan cargarse algunos, podés volver más tarde a completarlos (se suman a lo ya guardado).</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:.75rem">⏱️ Cada cruce cierra <strong>12 hs antes de su partido</strong> — mirá la fecha tope en cada uno. Pronosticá los cruces ya definidos; si aún faltan cargarse algunos, podés volver más tarde a completarlos (se suman a lo ya guardado).</div>
       <div id="elimFormArea">${buildElimFormInner(open.id)}</div>
       <button class="btn btn-primary" style="margin-top:1rem;width:100%" onclick="submitElimPicks()">💾 Guardar pronóstico de ${open.label}</button>`;
   } else {
@@ -2164,27 +2190,34 @@ function renderElimContent(part){
   }
   html+=renderElimResumen(part);
   cont.innerHTML=html;
-  if(open) iniciarCountdownElim(open.id);
 }
 
 function buildElimFormInner(win){
   if(win==='semifinal') return buildSemifinalForm();
   return clavesDeVentana(win).map((k)=>{
     const c=cr(k);
-    return crucePickCard(partidoLabel(k), k, c.home, c.away);
+    return crucePickCard(partidoLabel(k), k, c.home, c.away, win);
   }).join('');
 }
 
-function crucePickCard(label, clave, home, away){
+function crucePickCard(label, clave, home, away, win){
   if(!home || !away){
     return `<div class="cruce-card"><div class="cruce-label">${label}</div><div style="font-size:12px;color:var(--text-muted)">Cruce aún no definido.</div></div>`;
   }
   const sel=elimSel[clave]||'';
+  const cierre=cierreDeCruce(win, clave);
+  const cerrado=cierre ? (new Date() > new Date(cierre)) : false;
   const btn=(team)=>{
     const isSel = !!team && sel===team;
+    if(cerrado) return `<button class="team-pick ${isSel?'sel':''}" disabled>${isSel?'✓ ':''}${team||'—'}</button>`;
     return `<button class="team-pick ${isSel?'sel':''}" ${team?`onclick="pickTeam('${clave}','${(team||'').replace(/'/g,"\\'")}')"`:'disabled'}>${isSel?'✓ ':''}${team||'—'}</button>`;
   };
-  return `<div class="cruce-card"><div class="cruce-label">${label}</div><div class="cruce-teams">${btn(home)}${btn(away)}</div></div>`;
+  const info = cerrado
+    ? `<span class="elim-badge closed">🔒 Cerrado</span> <span style="color:var(--text-muted)">cerró ${fmtCierreCorto(cierre)}</span>`
+    : (cierre ? `🕒 Cierra: <strong style="color:var(--gold)">${fmtCierreCorto(cierre)}</strong>` : '🕒 Cierre: a definir');
+  return `<div class="cruce-card" style="${cerrado?'opacity:.6':''}"><div class="cruce-label">${label}</div>
+    <div class="cruce-teams">${btn(home)}${btn(away)}</div>
+    <div style="font-size:11px;margin-top:6px">${info}</div></div>`;
 }
 
 function perdedorSemi(clave){
@@ -2196,17 +2229,17 @@ function perdedorSemi(clave){
 function buildSemifinalForm(){
   const s1=cr('semis_1'), s2=cr('semis_2');
   let html='';
-  html+=crucePickCard('Semifinal 1', 'semis_1', s1.home, s1.away);
-  html+=crucePickCard('Semifinal 2', 'semis_2', s2.home, s2.away);
+  html+=crucePickCard('Semifinal 1', 'semis_1', s1.home, s1.away, 'semifinal');
+  html+=crucePickCard('Semifinal 2', 'semis_2', s2.home, s2.away, 'semifinal');
   const finalistas=[elimSel['semis_1'],elimSel['semis_2']].filter(Boolean);
   if(finalistas.length===2){
-    html+=crucePickCard('Final — ¿Campeón? (1º)', 'final_1', finalistas[0], finalistas[1]);
+    html+=crucePickCard('Final — ¿Campeón? (1º)', 'final_1', finalistas[0], finalistas[1], 'semifinal');
   } else {
     html+=`<div class="cruce-card"><div class="cruce-label">Final — ¿Campeón? (1º)</div><div style="font-size:12px;color:var(--text-muted)">Elige primero el ganador de cada semifinal.</div></div>`;
   }
   const perdedores=[perdedorSemi('semis_1'),perdedorSemi('semis_2')].filter(Boolean);
   if(perdedores.length===2){
-    html+=crucePickCard('Tercer puesto (3º)', '3ro_1', perdedores[0], perdedores[1]);
+    html+=crucePickCard('Tercer puesto (3º)', '3ro_1', perdedores[0], perdedores[1], 'semifinal');
   } else {
     html+=`<div class="cruce-card"><div class="cruce-label">Tercer puesto (3º)</div><div style="font-size:12px;color:var(--text-muted)">Se habilita al elegir los ganadores de las semis.</div></div>`;
   }
@@ -2242,15 +2275,15 @@ function sanitizeSemifinal(){
 function submitElimPicks(){
   const win=currentElimWin;
   if(!win) return;
-  // Re-chequeo de cierre del lado cliente
-  if(elimState(win).closed){ notify('La ventana de esta fase ya cerró.'); renderElimContent(currentElimPart); return; }
-  // Solo se exigen los cruces YA definidos; los que falten cargar quedan para después.
-  const req=clavesPickables(win);
-  if(!req.length){ notify('Todavía no hay cruces definidos para pronosticar en esta fase.'); return; }
-  const faltan=req.filter(k=>!elimSel[k]);
-  if(faltan.length){ notify('Completá los cruces ya definidos antes de guardar.'); return; }
+  // Solo se exigen/guardan los cruces YA definidos y AÚN ABIERTOS (cada cruce cierra
+  // 12 hs antes de su propio partido); los cerrados quedan como estaban y los que
+  // falten cargar quedan para después.
+  const abiertos=clavesPickables(win).filter(k=>!cruceCerrado(win,k));
+  if(!abiertos.length){ notify('No hay cruces abiertos para pronosticar en esta fase.'); renderElimContent(currentElimPart); return; }
+  const faltan=abiertos.filter(k=>!elimSel[k]);
+  if(faltan.length){ notify('Completá los cruces abiertos antes de guardar.'); return; }
   const picks={};
-  req.forEach(k=>picks[k]=elimSel[k]);
+  abiertos.forEach(k=>picks[k]=elimSel[k]);
   saveToSheet({action:'updatePicks', email:currentElimEmail, picks:picks, fase:win});
   // Optimista: reflejar localmente
   currentElimPart.picks=Object.assign({}, currentElimPart.picks||{}, picks);
@@ -2273,23 +2306,6 @@ function renderElimResumen(part){
       <span style="font-size:12px;color:var(--text-muted)">${cargados}/${claves.length} cargados</span></div></div>`;
   });
   return html;
-}
-
-function iniciarCountdownElim(win){
-  if(elimCountdownTimer) clearInterval(elimCountdownTimer);
-  const dl=(allData.deadlines||{})[win];
-  const txtEl=document.getElementById('elimDeadlineTxt');
-  if(txtEl) txtEl.textContent = dl ? new Date(dl).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}) : 'a definir';
-  const tick=()=>{
-    const el=document.getElementById('elimCountdown');
-    if(!el){ clearInterval(elimCountdownTimer); return; }
-    if(!dl){ el.textContent='—'; return; }
-    const diff=new Date(dl)-new Date();
-    if(diff<=0){ el.textContent='cerrada'; clearInterval(elimCountdownTimer); renderElimContent(currentElimPart); return; }
-    const d=Math.floor(diff/86400000), h=Math.floor(diff%86400000/3600000), m=Math.floor(diff%3600000/60000), s=Math.floor(diff%60000/1000);
-    el.textContent=`${d}d ${h}h ${m}m ${s}s`;
-  };
-  tick(); elimCountdownTimer=setInterval(tick,1000);
 }
 
 // ================================================================
