@@ -2779,7 +2779,12 @@ function tsToLocalInput(iso){
 
 function renderAdminEliminatorias(){
   const teamOpts=sel=>'<option value="">— equipo —</option>'+EQUIPOS_2026.map(e=>`<option value="${e}"${sel===e?' selected':''}>${e}</option>`).join('');
-  const winOpts=sel=>'<option value="">— Sin resultado —</option>'+EQUIPOS_2026.map(e=>`<option value="${e}"${sel===e?' selected':''}>${e}</option>`).join('');
+  // El resultado de un cruce solo puede ser uno de los dos equipos definidos en él.
+  const winOpts=(sel,home,away)=>{
+    const teams=[home,away].filter(Boolean);
+    if(!teams.length) return '<option value="">— definí el cruce primero —</option>';
+    return '<option value="">— Sin resultado —</option>'+teams.map(e=>`<option value="${e}"${sel===e?' selected':''}>${e}</option>`).join('');
+  };
   let html='';
   FASES_ELIM.forEach(fase=>{
     html+=`<div class="bracket-section"><div class="bracket-section-title">⚡ ${fase.label} — ${fase.pts} pt${fase.pts>1?'s':''} por acierto</div>`;
@@ -2793,19 +2798,34 @@ function renderAdminEliminatorias(){
           ${btnFaltantes(key)}
         </div>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-          <div class="select-wrap" style="flex:1;min-width:120px"><select data-home="${key}" style="font-size:12px;padding:7px 10px">${teamOpts(cru.home||'')}</select></div>
+          <div class="select-wrap" style="flex:1;min-width:120px"><select data-home="${key}" onchange="refrescarWinOpts('${key}')" style="font-size:12px;padding:7px 10px">${teamOpts(cru.home||'')}</select></div>
           <span class="vs" style="font-size:11px">vs</span>
-          <div class="select-wrap" style="flex:1;min-width:120px"><select data-away="${key}" style="font-size:12px;padding:7px 10px">${teamOpts(cru.away||'')}</select></div>
+          <div class="select-wrap" style="flex:1;min-width:120px"><select data-away="${key}" onchange="refrescarWinOpts('${key}')" style="font-size:12px;padding:7px 10px">${teamOpts(cru.away||'')}</select></div>
         </div>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px">
           <input type="datetime-local" data-ts="${key}" value="${tsToLocalInput(cru.ts||'')}" style="flex:1;min-width:150px;font-size:12px;padding:6px 8px">
-          <div class="select-wrap" style="flex:1;min-width:120px"><select data-elim="${key}" style="font-size:12px;padding:7px 10px">${winOpts(val)}</select></div>
+          <div class="select-wrap" style="flex:1;min-width:120px"><select data-elim="${key}" style="font-size:12px;padding:7px 10px">${winOpts(val, cru.home, cru.away)}</select></div>
         </div>
       </div>`;
     }
     html+='</div>';
   });
   document.getElementById('eliminatoriasAdmin').innerHTML=html;
+}
+
+// Al cambiar la dupla de un cruce, deja en el desplegable de resultado solo esos dos
+// equipos (conserva el resultado actual si sigue siendo uno de ellos).
+function refrescarWinOpts(key){
+  const homeSel=document.querySelector(`select[data-home="${key}"]`);
+  const awaySel=document.querySelector(`select[data-away="${key}"]`);
+  const winSel=document.querySelector(`select[data-elim="${key}"]`);
+  if(!winSel) return;
+  const home=homeSel?homeSel.value:'', away=awaySel?awaySel.value:'';
+  const cur=winSel.value;
+  const teams=[home,away].filter(Boolean);
+  winSel.innerHTML = teams.length
+    ? '<option value="">— Sin resultado —</option>'+teams.map(e=>`<option value="${e}"${cur===e?' selected':''}>${e}</option>`).join('')
+    : '<option value="">— definí el cruce primero —</option>';
 }
 
 // ¿Se puede completar ya este cruce? (los participantes solo pronostican lo definido)
