@@ -2279,7 +2279,7 @@ function iniciarCountdownElim(win){
   if(elimCountdownTimer) clearInterval(elimCountdownTimer);
   const dl=(allData.deadlines||{})[win];
   const txtEl=document.getElementById('elimDeadlineTxt');
-  if(txtEl) txtEl.textContent = dl ? new Date(dl).toLocaleString('es-AR') : 'a definir';
+  if(txtEl) txtEl.textContent = dl ? new Date(dl).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}) : 'a definir';
   const tick=()=>{
     const el=document.getElementById('elimCountdown');
     if(!el){ clearInterval(elimCountdownTimer); return; }
@@ -2614,7 +2614,7 @@ function renderFechaLimiteAdmin(){
     const offset = d.getTimezoneOffset()*60000;
     const localISO = new Date(d-offset).toISOString().slice(0,16);
     input.value = localISO;
-    status.textContent = `✅ Cierre configurado: ${d.toLocaleString('es-AR')}`;
+    status.textContent = `✅ Cierre configurado: ${d.toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false})}`;
     status.style.color='var(--verde)';
   } else {
     input.value='';
