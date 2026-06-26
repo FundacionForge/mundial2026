@@ -2077,7 +2077,7 @@ function actualizarTabsDashboard(){
 // ================================================================
 // ELIMINATORIAS — carga de pronósticos por fase (por email)
 // ================================================================
-let currentElimEmail='', currentElimPart=null, currentElimWin='', elimSel={};
+let currentElimEmail='', currentElimPart=null, currentElimWin='', elimSel={}, elimTickTimer=null;
 
 function loadElimPage(){
   // Refresca datos y, si ya estaba identificado, re-renderiza
@@ -2124,6 +2124,37 @@ function cruceCerrado(win, clave){
 function fmtCierreCorto(iso){
   if(!iso) return '';
   return new Date(iso).toLocaleString('es-AR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});
+}
+// Texto de cuenta regresiva a partir de los milisegundos restantes.
+function fmtFaltan(ms){
+  if(ms<=0) return 'cerrado';
+  const d=Math.floor(ms/86400000), h=Math.floor(ms%86400000/3600000), m=Math.floor(ms%3600000/60000), s=Math.floor(ms%60000/1000);
+  if(d>0) return `${d}d ${h}h ${m}m`;
+  if(h>0) return `${h}h ${m}m ${s}s`;
+  return `${m}m ${s}s`;
+}
+// Actualiza cada segundo los contadores de los cruces abiertos. Cuando alguno llega a
+// cero, re-renderiza el formulario para bloquear ese cruce (preserva las selecciones,
+// porque buildElimFormInner se arma desde elimSel).
+function startElimTick(){
+  if(elimTickTimer) clearInterval(elimTickTimer);
+  const tick=()=>{
+    const spans=document.querySelectorAll('#elimFormArea .elim-cd');
+    if(!spans.length){ clearInterval(elimTickTimer); elimTickTimer=null; return; }
+    const now=new Date().getTime();
+    let algunoCerro=false;
+    spans.forEach(sp=>{
+      const diff=new Date(sp.getAttribute('data-cierre')).getTime()-now;
+      if(diff<=0) algunoCerro=true;
+      sp.textContent=fmtFaltan(diff);
+    });
+    if(algunoCerro){
+      const area=document.getElementById('elimFormArea');
+      if(area) area.innerHTML=buildElimFormInner(currentElimWin);
+    }
+  };
+  tick();
+  elimTickTimer=setInterval(tick,1000);
 }
 
 function elimState(win){
@@ -2190,6 +2221,7 @@ function renderElimContent(part){
   }
   html+=renderElimResumen(part);
   cont.innerHTML=html;
+  if(open) startElimTick();
 }
 
 function buildElimFormInner(win){
@@ -2214,7 +2246,9 @@ function crucePickCard(label, clave, home, away, win){
   };
   const info = cerrado
     ? `<span class="elim-badge closed">🔒 Cerrado</span> <span style="color:var(--text-muted)">cerró ${fmtCierreCorto(cierre)}</span>`
-    : (cierre ? `🕒 Cierra: <strong style="color:var(--gold)">${fmtCierreCorto(cierre)}</strong>` : '🕒 Cierre: a definir');
+    : (cierre
+        ? `🕒 Cierra: <strong style="color:var(--gold)">${fmtCierreCorto(cierre)}</strong> · faltan <span class="elim-cd" data-cierre="${cierre}" style="color:var(--gold);font-weight:700">—</span>`
+        : '🕒 Cierre: a definir');
   return `<div class="cruce-card" style="${cerrado?'opacity:.6':''}"><div class="cruce-label">${label}</div>
     <div class="cruce-teams">${btn(home)}${btn(away)}</div>
     <div style="font-size:11px;margin-top:6px">${info}</div></div>`;
