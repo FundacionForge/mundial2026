@@ -2365,6 +2365,14 @@ function showPage(page,btn){
 // - Hay una ventana de eliminatorias abierta → "Eliminatorias" primero y activa.
 // - En cualquier otro caso (torneo en curso sin ventana abierta) → "Tablas" activa.
 // Criterio: primero se carga (pronósticos/eliminatorias) y luego se ven las tablas.
+// Tab inicial de la pestaña Tablas: respeta la última elegida explícitamente (mund_tab);
+// si no hay, en fase eliminatoria abre en "Eliminatorias" (fase2); en fase de grupos, "1ra Ronda".
+function resolverTabInicial(hayElim){
+  let st; try{ st=localStorage.getItem('mund_tab'); }catch(e){}
+  if(st==='fase1' || st==='total' || (st==='fase2' && hayElim)) return st;
+  return hayElim ? 'fase2' : 'fase1';
+}
+
 function configurarNav(){
   const nav=document.querySelector('nav');
   const bProde =document.getElementById('navProde');
@@ -2384,9 +2392,7 @@ function configurarNav(){
   // Solapa de Tablas: respeta la última elegida (al refrescar); si no, default por fase
   if(!window.__tabAutoSet){
     window.__tabAutoSet=true;
-    let st; try{ st=localStorage.getItem('mund_tab'); }catch(e){}
-    if(st==='fase1' || st==='total' || (st==='fase2' && hayElim)) currentTab=st;
-    else currentTab = hayElim ? 'fase2' : 'fase1';
+    currentTab = resolverTabInicial(hayElim);
   }
 
   bElim.style.display  = hayElim   ? '' : 'none';
@@ -2412,7 +2418,7 @@ function configurarNav(){
 
   orden.forEach(b=>nav.appendChild(b)); // reordena en el DOM
   // Recordar la decisión para aplicarla al instante en la próxima carga (sin flash)
-  try{ localStorage.setItem('mund_nav', JSON.stringify({hayElim, mostrarPro, activaPage})); }catch(e){}
+  try{ localStorage.setItem('mund_nav', JSON.stringify({hayElim, mostrarPro, activaPage, tab: currentTab})); }catch(e){}
   if(accesoAdmin()) showPage('admin'); else showPage(activaPage, activaBtn);
 }
 
@@ -2426,6 +2432,14 @@ function aplicarNavCacheada(){
   const bElim =document.getElementById('navElim');
   if(bElim)  bElim.style.display  = c.hayElim    ? '' : 'none';
   if(bProde) bProde.style.display = c.mostrarPro ? '' : 'none';
+  // Fijar YA el tab de Tablas (sin esperar al backend) para que no haya salto 1ra Ronda → Eliminatorias.
+  if(typeof c.hayElim!=='undefined'){
+    currentTab = resolverTabInicial(c.hayElim);
+    window.__tabAutoSet = true; // configurarNav no lo vuelve a recalcular (evita el salto)
+    [['tabFase1','fase1'],['tabFase2','fase2'],['tabTotal','total']].forEach(([id,t])=>{
+      const b=document.getElementById(id); if(b) b.classList.toggle('active', currentTab===t);
+    });
+  }
   if(c.activaPage){
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
     document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
