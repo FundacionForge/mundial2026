@@ -2386,7 +2386,7 @@ function configurarNav(){
     window.__tabAutoSet=true;
     let st; try{ st=localStorage.getItem('mund_tab'); }catch(e){}
     if(st==='fase1' || st==='total' || (st==='fase2' && hayElim)) currentTab=st;
-    else currentTab = hayElim ? 'total' : 'fase1';
+    else currentTab = hayElim ? 'fase2' : 'fase1';
   }
 
   bElim.style.display  = hayElim   ? '' : 'none';
