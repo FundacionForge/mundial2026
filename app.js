@@ -2314,10 +2314,11 @@ function submitElimPicks(){
   // falten cargar quedan para después.
   const abiertos=clavesPickables(win).filter(k=>!cruceCerrado(win,k));
   if(!abiertos.length){ notify('No hay cruces abiertos para pronosticar en esta fase.'); renderElimContent(currentElimPart); return; }
-  const faltan=abiertos.filter(k=>!elimSel[k]);
-  if(faltan.length){ notify('Completá los cruces abiertos antes de guardar.'); return; }
+  // Carga parcial: se guarda lo que hayas elegido; los cruces que dejes sin completar
+  // quedan para después (se suman a lo ya guardado, no se pisan).
   const picks={};
-  abiertos.forEach(k=>picks[k]=elimSel[k]);
+  abiertos.forEach(k=>{ if(elimSel[k]) picks[k]=elimSel[k]; });
+  if(!Object.keys(picks).length){ notify('Elegí el ganador de al menos un cruce para guardar.'); return; }
   saveToSheet({action:'updatePicks', email:currentElimEmail, picks:picks, fase:win});
   // Optimista: reflejar localmente
   currentElimPart.picks=Object.assign({}, currentElimPart.picks||{}, picks);
