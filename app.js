@@ -2925,6 +2925,69 @@ function descargarFaltantes(){
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
+// ---- REPORTE: participantes que aún deben completar algún pronóstico de Eliminatorias ----
+// "Cruces activos" = ya definidos (dupla) y todavía abiertos (no cerrados). Un participante
+// queda pendiente si le falta el pick de al menos uno de esos cruces.
+function clavesActivasElim(){
+  const out=[];
+  FASES_ELIM_WIN.forEach(w=>{
+    clavesDeVentana(w.id).forEach(k=>{
+      if(cruceCompletable(k) && !cruceCerrado(w.id,k)) out.push(k);
+    });
+  });
+  return out;
+}
+let _pendElimList=[];
+function mostrarPendientesElim(){
+  const activas=clavesActivasElim();
+  const parts=allData.participantes||[];
+  const pend=parts.map(p=>{
+    const faltan=activas.filter(k=>!(p.picks && p.picks[k])).length;
+    return {p, faltan};
+  }).filter(x=>x.faltan>0).sort((a,b)=>b.faltan-a.faltan);
+  _pendElimList=pend.map(x=>x.p);
+  const total=parts.length;
+  const lista=pend.length
+    ? pend.map((x,i)=>`<div class="result-row" style="justify-content:space-between;gap:10px">
+        <span style="font-size:13px"><strong>${i+1}.</strong> ${x.p.nombre||'—'}</span>
+        <span style="font-size:12px;color:var(--text-dim)">${x.p.email||'—'} · <strong style="color:var(--gold)">${x.faltan}</strong> sin cargar</span>
+      </div>`).join('')
+    : '<div style="color:var(--text-muted);font-size:13px">Nadie pendiente 🎉</div>';
+  document.getElementById('faltantesTitle').textContent='📋 Pendientes de Eliminatorias';
+  document.getElementById('faltantesBody').innerHTML=`
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px">
+      <strong style="color:var(--gold)">${pend.length}</strong> de ${total} participantes tienen al menos un cruce sin pronosticar
+      ${activas.length?`(de ${activas.length} cruces abiertos)`:''}.
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+      <button class="btn btn-primary btn-sm" style="flex:1;min-width:140px" onclick="copiarPendElim()">📋 Copiar emails</button>
+      <button class="btn btn-secondary btn-sm" style="flex:1;min-width:140px" onclick="descargarPendElim()">⬇️ Descargar CSV</button>
+    </div>
+    ${lista}`;
+  document.getElementById('faltantesOverlay').style.display='flex';
+}
+function copiarPendElim(){
+  const emails=_pendElimList.map(p=>(p.email||'').trim()).filter(Boolean);
+  if(!emails.length){ notify('No hay emails para copiar'); return; }
+  const txt=emails.join(', ');
+  const done=()=>notify('Emails copiados ✓ ('+emails.length+')');
+  if(navigator.clipboard && navigator.clipboard.writeText)
+    navigator.clipboard.writeText(txt).then(done).catch(()=>_copiaFallback(txt,done));
+  else _copiaFallback(txt,done);
+}
+function descargarPendElim(){
+  if(!_pendElimList.length){ notify('No hay pendientes'); return; }
+  const cell=s=>'"'+String(s==null?'':s).replace(/"/g,'""')+'"';
+  const lines=['Nombre;Email;Pais', ..._pendElimList.map(p=>[cell(p.nombre),cell(p.email),cell(p.pais)].join(';'))];
+  const csv='﻿'+lines.join('\r\n'); // BOM para que Excel lea bien los acentos
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='pendientes_eliminatorias.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
 async function guardarGoles(){
   const goles={};document.querySelectorAll('[data-gol]').forEach(i=>{goles[i.dataset.gol]=parseInt(i.value)||0;});
   await saveToSheet({action:'updateGoles',goles});allData.golesJugadores=goles;notify('Goles actualizados ✓');renderDashboard();
