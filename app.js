@@ -2958,7 +2958,7 @@ function mostrarPendientesElim(){
     const faltan=activas.filter(k=>!(p.picks && p.picks[k])).length;
     return {p, faltan};
   }).filter(x=>x.faltan>0).sort((a,b)=>b.faltan-a.faltan);
-  _pendElimList=pend.map(x=>x.p);
+  _pendElimList=pend; // [{p, faltan}]
   const total=parts.length;
   const lista=pend.length
     ? pend.map((x,i)=>`<div class="result-row" style="justify-content:space-between;gap:10px">
@@ -2980,7 +2980,7 @@ function mostrarPendientesElim(){
   document.getElementById('faltantesOverlay').style.display='flex';
 }
 function copiarPendElim(){
-  const emails=_pendElimList.map(p=>(p.email||'').trim()).filter(Boolean);
+  const emails=_pendElimList.map(x=>(x.p.email||'').trim()).filter(Boolean);
   if(!emails.length){ notify('No hay emails para copiar'); return; }
   const txt=emails.join(', ');
   const done=()=>notify('Emails copiados ✓ ('+emails.length+')');
@@ -2991,7 +2991,7 @@ function copiarPendElim(){
 function descargarPendElim(){
   if(!_pendElimList.length){ notify('No hay pendientes'); return; }
   const cell=s=>'"'+String(s==null?'':s).replace(/"/g,'""')+'"';
-  const lines=['Nombre;Email;Pais', ..._pendElimList.map(p=>[cell(p.nombre),cell(p.email),cell(p.pais)].join(';'))];
+  const lines=['Nombre;Email;Pais;Cruces pendientes', ..._pendElimList.map(x=>[cell(x.p.nombre),cell(x.p.email),cell(x.p.pais),x.faltan].join(';'))];
   const csv='﻿'+lines.join('\r\n'); // BOM para que Excel lea bien los acentos
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
