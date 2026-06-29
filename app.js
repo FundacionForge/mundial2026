@@ -1471,7 +1471,7 @@ const FASES_ELIM_WIN = [
 ];
 
 let currentStep=1, adminLogged=false, currentTab='fase1', filtroActivo='';
-let allData={participantes:[],puntosEquipos:{},golesJugadores:{},resultadosElim:{},campeonFinal:'',fechaLimite:'',cierresElim:{},forzarPronosticos:'',avisos:'',selecciones:[]};
+let allData={participantes:[],puntosEquipos:{},golesJugadores:{},golesJugadoresElim:{},resultadosElim:{},campeonFinal:'',fechaLimite:'',cierresElim:{},forzarPronosticos:'',avisos:'',selecciones:[]};
 let dashParts=[];          // participantes tal como se muestran en la tabla (para el click)
 let currentPronoIdx=-1;    // fila abierta en el visor de pronóstico
 let datosCargados=false;   // true tras la primera carga válida de getData (evita revertir al fallback)
@@ -1986,6 +1986,9 @@ function calcPuntos(p,tab){
       if(pick===ganador)pf2+=fase.pts;
     }
   });
+  // Goles de los goleadores anotados en fase eliminatoria suman en la Tabla Eliminatorias.
+  const golesElim=allData.golesJugadoresElim||{};
+  goles.forEach(g=>{pf2+=golesElim[g]||0;});
   const bonus=(allData.campeonFinal&&p.campeon&&p.campeon.trim()===allData.campeonFinal.trim())?20:0;
   if(tab==='fase1')return pf1;
   if(tab==='fase2')return pf2;
@@ -2770,8 +2773,18 @@ function verPronosticoAdmin(i){
 
 function renderAdminGoles(){
   const goleadores=[...new Set((allData.participantes||[]).flatMap(x=>(x.goleadores||'').split(',').map(g=>g.trim()).filter(Boolean)))].sort();
+  const gE=allData.golesJugadoresElim||{};
   document.getElementById('golesAdmin').innerHTML=goleadores.length
-    ?goleadores.map(g=>`<div class="result-row"><span class="team-name">${g}</span><input type="number" class="goals-input" min="0" value="${allData.golesJugadores[g]||0}" data-gol="${g}"><span class="vs">goles</span></div>`).join('')
+    ?`<div class="result-row" style="gap:8px;align-items:center;border:none;opacity:.7">
+        <span class="team-name" style="flex:1;font-size:10px;letter-spacing:1px;text-transform:uppercase">Goleador</span>
+        <span style="width:64px;text-align:center;font-size:10px;text-transform:uppercase">Grupos</span>
+        <span style="width:64px;text-align:center;font-size:10px;text-transform:uppercase;color:var(--gold)">Elim.</span>
+      </div>`+
+      goleadores.map(g=>`<div class="result-row" style="gap:8px;align-items:center">
+        <span class="team-name" style="flex:1">${g}</span>
+        <input type="number" class="goals-input" min="0" style="width:64px" value="${allData.golesJugadores[g]||0}" data-gol="${g}" title="Goles en fase de grupos (suman en 1ra Ronda)">
+        <input type="number" class="goals-input" min="0" style="width:64px;border-color:rgba(251,191,36,.4)" value="${gE[g]||0}" data-golelim="${g}" title="Goles en eliminatorias (suman en Tabla Eliminatorias)">
+      </div>`).join('')
     :'<div style="color:var(--text-muted);font-size:13px">Los goleadores aparecen aquí una vez que los participantes se inscriban.</div>';
 }
 
@@ -2990,7 +3003,11 @@ function descargarPendElim(){
 
 async function guardarGoles(){
   const goles={};document.querySelectorAll('[data-gol]').forEach(i=>{goles[i.dataset.gol]=parseInt(i.value)||0;});
-  await saveToSheet({action:'updateGoles',goles});allData.golesJugadores=goles;notify('Goles actualizados ✓');renderDashboard();
+  const golesElim={};document.querySelectorAll('[data-golelim]').forEach(i=>{golesElim[i.dataset.golelim]=parseInt(i.value)||0;});
+  await saveToSheet({action:'updateGoles',goles});
+  await saveToSheet({action:'updateGolesElim',goles:golesElim});
+  allData.golesJugadores=goles; allData.golesJugadoresElim=golesElim;
+  notify('Goles actualizados ✓');renderDashboard();
 }
 async function guardarPuntosFase(){
   const puntos={};document.querySelectorAll('[data-equipo]').forEach(i=>{puntos[i.dataset.equipo]=parseInt(i.value)||0;});
