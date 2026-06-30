@@ -3,7 +3,7 @@
 // ================================================================
 // Backends: producción (datos reales) y prueba (planilla de testing).
 const BACKENDS = {
-  prod: 'https://script.google.com/macros/s/AKfycbx9ogWcjoTzKbZPHeBgZcucUkE-KMessIvKgSzlPCmnM4004Q62mMkpsglgQu-PPM5O6w/exec',
+  prod: 'https://script.google.com/macros/s/AKfycbyBOcLyd3fgZvwvhNeujvzNckhrFtVFEnq-eko4iJlBcCdjzwFK25G-Lc7TwDxCx1i3Pw/exec',
   test: 'https://script.google.com/macros/s/AKfycbzwRGR_-IiYD3iPQ4GdlXctJeDDUV2ISu-BlRXn661QYUYUvY9ex5a2SyvtV_gwVw7qUA/exec',
 };
 // El backend de PRODUCCIÓN se usa SOLO en el dominio oficial. Cualquier otro lado
@@ -1461,7 +1461,7 @@ function partidoLabel(clave){
   return base===undefined ? ('Cruce '+m[2]) : ('Partido '+(base + (parseInt(m[2],10)-1)));
 }
 
-// Ventanas de carga de pronóstico (el cierre se aplica 12 hs antes del primer
+// Ventanas de carga de pronóstico (el cierre se aplica 1 hora antes del primer
 // partido de la fase). "semifinal" agrupa semis + 3er puesto + final en una sola carga.
 const FASES_ELIM_WIN = [
   {id:'16avos',    label:'Dieciseisavos'},
@@ -2105,9 +2105,9 @@ function clavesBaseVentana(win){
 }
 
 // Horas antes del partido en que cierra cada cruce (debe coincidir con el backend).
-const HORAS_ANTES_CIERRE = 12;
+const HORAS_ANTES_CIERRE = 1;
 
-// Cierre (ISO) de UN cruce: si la fase tiene override manual, gana; si no, 12 hs antes
+// Cierre (ISO) de UN cruce: si la fase tiene override manual, gana; si no, 1 hora antes
 // del kickoff de ESE cruce. '' si todavía no hay horario cargado.
 function cierreDeCruce(win, clave){
   const ov=(allData.cierresElim||{})[win];
@@ -2167,7 +2167,7 @@ function elimState(win){
   // así los participantes pronostican lo ya cargado sin esperar al resto.
   const known = base.some(k=>cruces[k] && cruces[k].home && cruces[k].away);
   // La ventana se considera "cerrada" sólo cuando TODOS sus cruces definidos cerraron
-  // (cada cruce cierra por separado, 12 hs antes de su propio partido).
+  // (cada cruce cierra por separado, 1 hora antes de su propio partido).
   const definidos = clavesDeVentana(win).filter(k=>cruces[k] && cruces[k].home && cruces[k].away);
   const closed = known && definidos.length>0 && definidos.every(k=>cruceCerrado(win,k));
   return {known, closed};
@@ -2215,12 +2215,12 @@ function renderElimContent(part){
     elimSel={};
     clavesDeVentana(open.id).forEach(k=>{ if(part.picks && part.picks[k]) elimSel[k]=part.picks[k]; });
     html+=`<div class="elim-win-title">${open.label} <span class="elim-badge open">Abierta</span></div>
-      <div style="font-size:12px;color:var(--text-muted);margin-bottom:.75rem">⏱️ Cada cruce cierra <strong>12 hs antes de su partido</strong> — mirá la fecha tope en cada uno. Pronosticá los cruces ya definidos; si aún faltan cargarse algunos, podés volver más tarde a completarlos (se suman a lo ya guardado).</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:.75rem">⏱️ Cada cruce cierra <strong>1 hora antes de su partido</strong> — mirá la fecha tope en cada uno. Pronosticá los cruces ya definidos; si aún faltan cargarse algunos, podés volver más tarde a completarlos (se suman a lo ya guardado).</div>
       <div id="elimFormArea">${buildElimFormInner(open.id)}</div>
       <button class="btn btn-primary" style="margin-top:1rem;width:100%" onclick="submitElimPicks()">💾 Guardar pronóstico de ${open.label}</button>`;
   } else {
     currentElimWin='';
-    html+=`<div class="admin-card"><div class="admin-desc">Por ahora no hay ninguna fase abierta para cargar. La próxima ventana se habilita cuando se definan los cruces de la siguiente fase, y cierra 12 hs antes del primer partido.</div></div>`;
+    html+=`<div class="admin-card"><div class="admin-desc">Por ahora no hay ninguna fase abierta para cargar. La próxima ventana se habilita cuando se definan los cruces de la siguiente fase, y cierra 1 hora antes del primer partido.</div></div>`;
   }
   html+=renderElimResumen(part);
   cont.innerHTML=html;
@@ -2313,7 +2313,7 @@ function submitElimPicks(){
   const win=currentElimWin;
   if(!win) return;
   // Solo se exigen/guardan los cruces YA definidos y AÚN ABIERTOS (cada cruce cierra
-  // 12 hs antes de su propio partido); los cerrados quedan como estaban y los que
+  // 1 hora antes de su propio partido); los cerrados quedan como estaban y los que
   // falten cargar quedan para después.
   const abiertos=clavesPickables(win).filter(k=>!cruceCerrado(win,k));
   if(!abiertos.length){ notify('No hay cruces abiertos para pronosticar en esta fase.'); renderElimContent(currentElimPart); return; }
@@ -2748,7 +2748,7 @@ async function borrarDeadlinesElim(){
   }
   renderDeadlinesElimAdmin();
   const st = document.getElementById('deadlinesElimStatus');
-  st.textContent = 'Volvió al cálculo automático (12 hs antes del primer partido de cada fase).';
+  st.textContent = 'Volvió al cálculo automático (1 hora antes del primer partido de cada fase).';
   st.style.color = 'var(--text-muted)';
   notify('Volvió a automático ✓');
 }

@@ -233,7 +233,7 @@ select option{background:#0d2318}
   nav button{font-size:10px;letter-spacing:1px;padding:14px 4px}
 }
 </style>
-<script src="app.js?v=20260629b" defer></script>
+<script src="app.js?v=20260630" defer></script>
 </head>
 <body>
 <div class="field-bg"></div>
@@ -574,7 +574,7 @@ select option{background:#0d2318}
     <!-- CARD FECHAS TOPE ELIMINATORIAS (fallback manual si falla la API) -->
     <div class="admin-card admin-fecha-card" style="margin-bottom:1rem">
       <div class="admin-title">⏱️ Fechas tope eliminatorias (fallback)</div>
-      <div class="admin-desc">Normalmente el cierre de carga de cada fase se calcula solo: <strong>12 hs antes del primer partido</strong> de esa fase, según la API. Si la API no funciona, fija aquí manualmente el cierre. Déjalo vacío para usar el cálculo automático.</div>
+      <div class="admin-desc">Normalmente el cierre de carga de cada fase se calcula solo: <strong>1 hora antes del primer partido</strong> de esa fase, según la API. Si la API no funciona, fija aquí manualmente el cierre. Déjalo vacío para usar el cálculo automático.</div>
       <div id="deadlinesElimAdmin"></div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
         <button class="btn btn-primary btn-sm" onclick="guardarDeadlinesElim()">Guardar fechas tope</button>
@@ -637,7 +637,7 @@ select option{background:#0d2318}
 
       <div class="admin-card">
         <div class="admin-title">🏆 Cruces y ganadores</div>
-        <div class="admin-desc">Cargá las duplas (local vs visitante) de cada cruce a medida que se definen: apenas guardes una, los participantes ya pueden pronosticar esa fase sin esperar a que estén todas. La fecha-hora es opcional (define el cierre 12 hs antes). El ganador se completa cuando termine el partido.</div>
+        <div class="admin-desc">Cargá las duplas (local vs visitante) de cada cruce a medida que se definen: apenas guardes una, los participantes ya pueden pronosticar esa fase sin esperar a que estén todas. La fecha-hora es opcional (define el cierre 1 hora antes). El ganador se completa cuando termine el partido.</div>
         <div id="eliminatoriasAdmin" style="max-height:350px;overflow-y:auto;margin-bottom:1rem">
           <div style="color:var(--text-muted);font-size:13px">Cargando...</div>
         </div>
