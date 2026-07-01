@@ -2320,24 +2320,25 @@ function buildLlaveForm(){
   const teamBtn=(key,team)=>{
     if(!team) return `<button class="bkt-team empty" disabled>— a definir —</button>`;
     const sel = elimSel[key]===team;
+    const cls = sel ? (key==='final_1' ? 'champ' : 'win') : ''; // campeón en dorado
     const safe = String(team).replace(/'/g,"\\'");
     const oc = cerrado ? '' : `onclick="pickTeam('${key}','${safe}')"`;
-    return `<button class="bkt-team ${sel?'win':''}" ${cerrado?'disabled':''} ${oc} title="${team}">${sel?'✓ ':''}${team}</button>`;
+    return `<button class="bkt-team ${cls}" ${cerrado?'disabled':''} ${oc} title="${team}">${sel?'✓ ':''}${team}</button>`;
   };
-  const match=(key,label)=>{
+  const match=(key,label,cls)=>{
     const [a,b]=matchupDe(key);
-    return `<div class="bkt-match"><div class="bkt-match-label">${label}</div>${teamBtn(key,a)}${teamBtn(key,b)}</div>`;
+    return `<div class="bkt-match ${cls||''}"><div class="bkt-match-label">${label}</div>${teamBtn(key,a)}${teamBtn(key,b)}</div>`;
   };
-  const col=(t,inner)=>`<div class="bkt-col"><div class="bkt-col-title">${t}</div><div class="bkt-matches">${inner}</div></div>`;
+  const col=(t,inner,cls)=>`<div class="bkt-col ${cls||''}"><div class="bkt-col-title">${t}</div><div class="bkt-matches">${inner}</div></div>`;
 
   let html=`<div class="cruce-card" style="text-align:center;font-size:12px;background:rgba(251,191,36,.05)">${banner}</div>`;
+  // La columna Final agrupa (centradas) la Final arriba y el 3er/4º puesto debajo.
+  const finalCol = match('final_1','🏆 Final · Campeón','champ') + match('3ro_1','🥉 3º y 4º puesto');
   html+=`<div class="bracket">
     ${col('Cuartos', match('4tos_1','P97')+match('4tos_2','P98')+match('4tos_3','P99')+match('4tos_4','P100'))}
     ${col('Semifinales', match('semis_1','P101')+match('semis_2','P102'))}
-    ${col('Final', match('final_1','P104 · 🏆 Campeón'))}
+    ${col('Final y 3º', finalCol, 'bkt-col-final')}
   </div>`;
-  html+=`<div class="bkt-col-title" style="margin-top:14px">Tercer puesto</div>
-    <div class="bkt-3ro">${match('3ro_1','P103 · 🥉 3º puesto')}</div>`;
   html+=buildPodioResumen([elimSel['semis_1'],elimSel['semis_2']].filter(Boolean));
   return html;
 }
