@@ -1461,13 +1461,14 @@ function partidoLabel(clave){
   return base===undefined ? ('Cruce '+m[2]) : ('Partido '+(base + (parseInt(m[2],10)-1)));
 }
 
-// Ventanas de carga de pronóstico (el cierre se aplica 1 hora antes del primer
-// partido de la fase). "semifinal" agrupa semis + 3er puesto + final en una sola carga.
+// Ventanas de carga de pronóstico. 16avos y 8vos cierran cruce por cruce (1 h antes de
+// cada partido). "llave" agrupa TODO el bracket desde cuartos: cuartos → semis → final +
+// 3er puesto, en un solo formulario que deriva las rondas de tus propios picks y cierra
+// de una vez, 1 h antes del primer partido de cuartos.
 const FASES_ELIM_WIN = [
-  {id:'16avos',    label:'Dieciseisavos'},
-  {id:'8vos',      label:'Octavos'},
-  {id:'4tos',      label:'Cuartos'},
-  {id:'semifinal', label:'Semifinal + Final'},
+  {id:'16avos', label:'Dieciseisavos'},
+  {id:'8vos',   label:'Octavos'},
+  {id:'llave',  label:'Cuartos → Final'},
 ];
 
 let currentStep=1, adminLogged=false, currentTab='fase1', filtroActivo='';
@@ -2095,21 +2096,36 @@ function cr(clave){ return (allData.crucesElim||{})[clave] || {}; }
 function clavesDeVentana(win){
   if(win==='16avos') return Array.from({length:16},(_,i)=>'16avos_'+(i+1));
   if(win==='8vos')   return Array.from({length:8 },(_,i)=>'8vos_'+(i+1));
-  if(win==='4tos')   return Array.from({length:4 },(_,i)=>'4tos_'+(i+1));
-  if(win==='semifinal') return ['semis_1','semis_2','final_1','3ro_1'];
+  if(win==='llave')  return ['4tos_1','4tos_2','4tos_3','4tos_4','semis_1','semis_2','final_1','3ro_1'];
   return [];
 }
-// Cruces que necesitan matchup conocido para que la ventana se considere "abierta"
+// Cruces que necesitan matchup conocido para que la ventana se considere "abierta".
+// En el bracket "llave", los cuartos son la base (semis/final/3º se derivan de tus picks).
 function clavesBaseVentana(win){
-  return win==='semifinal' ? ['semis_1','semis_2'] : clavesDeVentana(win);
+  return win==='llave' ? ['4tos_1','4tos_2','4tos_3','4tos_4'] : clavesDeVentana(win);
 }
 
 // Horas antes del partido en que cierra cada cruce (debe coincidir con el backend).
 const HORAS_ANTES_CIERRE = 1;
 
-// Cierre (ISO) de UN cruce: si la fase tiene override manual, gana; si no, 1 hora antes
-// del kickoff de ESE cruce. '' si todavía no hay horario cargado.
+// Cierre ÚNICO (ISO) del bracket "Cuartos → Final": override manual (cierre_llave) si
+// existe; si no, 1 h antes del PRIMER partido de cuartos (el ts más temprano de 4tos_1..4).
+// '' si todavía no hay ningún horario de cuartos cargado. Debe coincidir con el backend.
+function cierreBracket(){
+  const ov=(allData.cierresElim||{})['llave'];
+  if(ov) return ov;
+  let min=Infinity;
+  ['4tos_1','4tos_2','4tos_3','4tos_4'].forEach(k=>{
+    const c=cr(k);
+    if(c && c.ts){ const t=new Date(c.ts).getTime(); if(!isNaN(t) && t<min) min=t; }
+  });
+  return min===Infinity ? '' : new Date(min - HORAS_ANTES_CIERRE*3600*1000).toISOString();
+}
+// Cierre (ISO) de UN cruce. En el bracket "llave" todos los cruces comparten cierreBracket().
+// Para 16avos/8vos: override manual de la fase si existe; si no, 1 h antes del kickoff de
+// ESE cruce. '' si todavía no hay horario cargado.
 function cierreDeCruce(win, clave){
+  if(win==='llave') return cierreBracket();
   const ov=(allData.cierresElim||{})[win];
   if(ov) return ov;
   const c=cr(clave);
@@ -2166,8 +2182,14 @@ function elimState(win){
   // La ventana queda "abierta" apenas hay AL MENOS UN cruce con dupla definida:
   // así los participantes pronostican lo ya cargado sin esperar al resto.
   const known = base.some(k=>cruces[k] && cruces[k].home && cruces[k].away);
-  // La ventana se considera "cerrada" sólo cuando TODOS sus cruces definidos cerraron
-  // (cada cruce cierra por separado, 1 hora antes de su propio partido).
+  // Bracket "llave": cierre único (1 h antes del primer cuarto) → cerrado de una vez.
+  if(win==='llave'){
+    const cierre=cierreBracket();
+    const closed = known && !!cierre && new Date() > new Date(cierre);
+    return {known, closed};
+  }
+  // 16avos/8vos: cerrada sólo cuando TODOS sus cruces definidos cerraron (cada uno cierra
+  // por separado, 1 hora antes de su propio partido).
   const definidos = clavesDeVentana(win).filter(k=>cruces[k] && cruces[k].home && cruces[k].away);
   const closed = known && definidos.length>0 && definidos.every(k=>cruceCerrado(win,k));
   return {known, closed};
@@ -2177,13 +2199,17 @@ function elimState(win){
 // En la ventana semifinal, final_1 y 3ro_1 se derivan de los ganadores elegidos.
 function clavesPickables(win){
   const cruces=allData.crucesElim||{};
-  if(win!=='semifinal'){
+  if(win!=='llave'){
     return clavesDeVentana(win).filter(k=>cruces[k] && cruces[k].home && cruces[k].away);
   }
+  // Cuartos: los que tengan dupla real cargada. Semis/final/3º se derivan de tus picks y
+  // se habilitan a medida que completás la ronda anterior.
   const out=[];
-  ['semis_1','semis_2'].forEach(k=>{ if(cruces[k] && cruces[k].home && cruces[k].away) out.push(k); });
-  if([elimSel['semis_1'],elimSel['semis_2']].filter(Boolean).length===2) out.push('final_1');
-  if([perdedorSemi('semis_1'),perdedorSemi('semis_2')].filter(Boolean).length===2) out.push('3ro_1');
+  ['4tos_1','4tos_2','4tos_3','4tos_4'].forEach(k=>{ if(cruces[k] && cruces[k].home && cruces[k].away) out.push(k); });
+  if(elimSel['4tos_1'] && elimSel['4tos_2']) out.push('semis_1');
+  if(elimSel['4tos_3'] && elimSel['4tos_4']) out.push('semis_2');
+  if(elimSel['semis_1'] && elimSel['semis_2']) out.push('final_1');
+  if(perdedorDe('semis_1') && perdedorDe('semis_2')) out.push('3ro_1');
   return out;
 }
 
@@ -2214,8 +2240,12 @@ function renderElimContent(part){
     currentElimWin=open.id;
     elimSel={};
     clavesDeVentana(open.id).forEach(k=>{ if(part.picks && part.picks[k]) elimSel[k]=part.picks[k]; });
+    if(open.id==='llave') sanitizeLlave(); // descarta picks derivados inconsistentes al cargar
+    const help = open.id==='llave'
+      ? 'Elegí los ganadores de cuartos y se arman solas las semis (según el fixture), la final y el 3er puesto. Se cierra <strong>todo junto, 1 hora antes del primer partido de cuartos</strong>.'
+      : 'Cada cruce cierra <strong>1 hora antes de su partido</strong> — mirá la fecha tope en cada uno. Pronosticá los cruces ya definidos; si aún faltan cargarse algunos, podés volver más tarde a completarlos (se suman a lo ya guardado).';
     html+=`<div class="elim-win-title">${open.label} <span class="elim-badge open">Abierta</span></div>
-      <div style="font-size:12px;color:var(--text-muted);margin-bottom:.75rem">⏱️ Cada cruce cierra <strong>1 hora antes de su partido</strong> — mirá la fecha tope en cada uno. Pronosticá los cruces ya definidos; si aún faltan cargarse algunos, podés volver más tarde a completarlos (se suman a lo ya guardado).</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:.75rem">⏱️ ${help}</div>
       <div id="elimFormArea">${buildElimFormInner(open.id)}</div>
       <button class="btn btn-primary" style="margin-top:1rem;width:100%" onclick="submitElimPicks()">💾 Guardar pronóstico de ${open.label}</button>`;
   } else {
@@ -2228,7 +2258,7 @@ function renderElimContent(part){
 }
 
 function buildElimFormInner(win){
-  if(win==='semifinal') return buildSemifinalForm();
+  if(win==='llave') return buildLlaveForm();
   return clavesDeVentana(win).map((k)=>{
     const c=cr(k);
     return crucePickCard(partidoLabel(k), k, c.home, c.away, win);
@@ -2247,6 +2277,11 @@ function crucePickCard(label, clave, home, away, win){
     if(cerrado) return `<button class="team-pick ${isSel?'sel':''}" disabled>${isSel?'✓ ':''}${team||'—'}</button>`;
     return `<button class="team-pick ${isSel?'sel':''}" ${team?`onclick="pickTeam('${clave}','${(team||'').replace(/'/g,"\\'")}')"`:'disabled'}>${isSel?'✓ ':''}${team||'—'}</button>`;
   };
+  // En el bracket el cierre es único (banner arriba); la tarjeta no repite el pie de cierre.
+  if(win==='llave'){
+    return `<div class="cruce-card" style="${cerrado?'opacity:.6':''}"><div class="cruce-label">${label}</div>
+      <div class="cruce-teams">${btn(home)}${btn(away)}</div></div>`;
+  }
   const info = cerrado
     ? `<span class="elim-badge closed">🔒 Cerrado</span> <span style="color:var(--text-muted)">cerró ${fmtCierreCorto(cierre)}</span>`
     : (cierre
@@ -2257,30 +2292,51 @@ function crucePickCard(label, clave, home, away, win){
     <div style="font-size:11px;margin-top:6px">${info}</div></div>`;
 }
 
-function perdedorSemi(clave){
-  const c=cr(clave), w=elimSel[clave];
-  if(!w||!c.home||!c.away) return '';
-  return w===c.home ? c.away : c.home;
+// Emparejamiento [home, away] de un cruce del bracket. Cuartos: equipos reales del cache.
+// Semis/final/3º: derivados de los ganadores/perdedores que fuiste eligiendo.
+function matchupDe(key){
+  if(key==='semis_1') return [elimSel['4tos_1']||'', elimSel['4tos_2']||''];
+  if(key==='semis_2') return [elimSel['4tos_3']||'', elimSel['4tos_4']||''];
+  if(key==='final_1') return [elimSel['semis_1']||'', elimSel['semis_2']||''];
+  if(key==='3ro_1')   return [perdedorDe('semis_1'), perdedorDe('semis_2')];
+  const c=cr(key); return [c.home||'', c.away||''];
+}
+// Perdedor de un cruce = el equipo de su emparejamiento que NO elegiste como ganador.
+function perdedorDe(key){
+  const [a,b]=matchupDe(key), w=elimSel[key];
+  if(!w||!a||!b) return '';
+  return w===a ? b : a;
 }
 
-function buildSemifinalForm(){
-  const s1=cr('semis_1'), s2=cr('semis_2');
-  let html='';
-  html+=crucePickCard('Semifinal 1', 'semis_1', s1.home, s1.away, 'semifinal');
-  html+=crucePickCard('Semifinal 2', 'semis_2', s2.home, s2.away, 'semifinal');
-  const finalistas=[elimSel['semis_1'],elimSel['semis_2']].filter(Boolean);
-  if(finalistas.length===2){
-    html+=crucePickCard('Final — ¿Campeón? (1º)', 'final_1', finalistas[0], finalistas[1], 'semifinal');
-  } else {
-    html+=`<div class="cruce-card"><div class="cruce-label">Final — ¿Campeón? (1º)</div><div style="font-size:12px;color:var(--text-muted)">Elige primero el ganador de cada semifinal.</div></div>`;
-  }
-  const perdedores=[perdedorSemi('semis_1'),perdedorSemi('semis_2')].filter(Boolean);
-  if(perdedores.length===2){
-    html+=crucePickCard('Tercer puesto (3º)', '3ro_1', perdedores[0], perdedores[1], 'semifinal');
-  } else {
-    html+=`<div class="cruce-card"><div class="cruce-label">Tercer puesto (3º)</div><div style="font-size:12px;color:var(--text-muted)">Se habilita al elegir los ganadores de las semis.</div></div>`;
-  }
-  html+=buildPodioResumen(finalistas);
+// Bracket "Cuartos → Final": cuartos reales (los 8 equipos) → semis y final/3º derivados de
+// tus picks, con cierre único arriba. Numeración FIFA: cuartos P97-100, semis P101/102,
+// 3º P103, final P104. Semis por fixture: P101 = Gº P97 vs Gº P98; P102 = Gº P99 vs Gº P100.
+function buildLlaveForm(){
+  const cierre=cierreBracket();
+  const cerrado=cierre ? (new Date() > new Date(cierre)) : false;
+  const banner = cerrado
+    ? `<span class="elim-badge closed">🔒 Cerrado</span> <span style="color:var(--text-muted)">cerró ${fmtCierreCorto(cierre)}</span>`
+    : (cierre
+        ? `🕒 Cierra: <strong style="color:var(--gold)">${fmtCierreCorto(cierre)}</strong> · faltan <span class="elim-cd" data-cierre="${cierre}" style="color:var(--gold);font-weight:700">—</span>`
+        : '🕒 Cierre: a definir');
+  const title=t=>`<div class="elim-win-title" style="font-size:15px;margin:1rem 0 .5rem">${t}</div>`;
+  const placeholder=(label,msg)=>`<div class="cruce-card"><div class="cruce-label">${label}</div><div style="font-size:12px;color:var(--text-muted)">${msg}</div></div>`;
+  const derivada=(key,titulo)=>{
+    const [a,b]=matchupDe(key);
+    return (a&&b) ? crucePickCard(titulo, key, a, b, 'llave')
+                  : placeholder(titulo, 'Se habilita al elegir los ganadores de la ronda anterior.');
+  };
+
+  let html=`<div class="cruce-card" style="text-align:center;font-size:12px;background:rgba(251,191,36,.05)">${banner}</div>`;
+  html+=title('Cuartos de final');
+  ['4tos_1','4tos_2','4tos_3','4tos_4'].forEach(k=>{ const c=cr(k); html+=crucePickCard(partidoLabel(k), k, c.home, c.away, 'llave'); });
+  html+=title('Semifinales');
+  html+=derivada('semis_1', partidoLabel('semis_1')+' · Semifinal 1');
+  html+=derivada('semis_2', partidoLabel('semis_2')+' · Semifinal 2');
+  html+=title('Final y tercer puesto');
+  html+=derivada('final_1', partidoLabel('final_1')+' · Final — ¿Campeón? (1º)');
+  html+=derivada('3ro_1',   partidoLabel('3ro_1')+' · Tercer puesto (3º)');
+  html+=buildPodioResumen([elimSel['semis_1'],elimSel['semis_2']].filter(Boolean));
   return html;
 }
 
@@ -2288,7 +2344,7 @@ function buildPodioResumen(finalistas){
   const camp=elimSel['final_1']||'';
   const sub = (finalistas.length===2 && camp) ? (finalistas.find(t=>t!==camp)||'') : '';
   const tercero=elimSel['3ro_1']||'';
-  const perdedores=[perdedorSemi('semis_1'),perdedorSemi('semis_2')].filter(Boolean);
+  const perdedores=[perdedorDe('semis_1'),perdedorDe('semis_2')].filter(Boolean);
   const cuarto = (perdedores.length===2 && tercero) ? (perdedores.find(t=>t!==tercero)||'') : '';
   const row=(pos,team)=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(22,101,52,.2)"><span style="color:var(--text-muted)">${pos}</span><strong>${team||'—'}</strong></div>`;
   return `<div class="cruce-card" style="margin-top:12px"><div class="cruce-label">Tu podio</div>
@@ -2297,15 +2353,21 @@ function buildPodioResumen(finalistas){
 
 function pickTeam(clave, team){
   elimSel[clave]=team;
-  if(currentElimWin==='semifinal') sanitizeSemifinal();
+  if(currentElimWin==='llave') sanitizeLlave();
   const area=document.getElementById('elimFormArea');
   if(area) area.innerHTML=buildElimFormInner(currentElimWin);
 }
 
-function sanitizeSemifinal(){
+// Al cambiar un pick aguas arriba, descarta los picks aguas abajo que dejaron de ser
+// válidos (equipos que ya no participan de la ronda derivada). Orden: semis → final/3º.
+function sanitizeLlave(){
+  [['semis_1','4tos_1','4tos_2'],['semis_2','4tos_3','4tos_4']].forEach(([s,a,b])=>{
+    const feed=[elimSel[a],elimSel[b]].filter(Boolean);
+    if(!(feed.length===2 && feed.includes(elimSel[s]))) delete elimSel[s];
+  });
   const finalistas=[elimSel['semis_1'],elimSel['semis_2']].filter(Boolean);
   if(!(finalistas.length===2 && finalistas.includes(elimSel['final_1']))) delete elimSel['final_1'];
-  const perdedores=[perdedorSemi('semis_1'),perdedorSemi('semis_2')].filter(Boolean);
+  const perdedores=[perdedorDe('semis_1'),perdedorDe('semis_2')].filter(Boolean);
   if(!(perdedores.length===2 && perdedores.includes(elimSel['3ro_1']))) delete elimSel['3ro_1'];
 }
 
