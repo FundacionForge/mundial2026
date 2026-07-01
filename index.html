@@ -211,6 +211,19 @@ select option{background:#0d2318}
 .goals-input{width:60px!important;flex-shrink:0;text-align:center!important;padding:8px!important;font-size:15px!important;font-weight:700!important}
 .bracket-section{margin-bottom:1.5rem}
 .bracket-section-title{font-size:11px;font-weight:700;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(251,191,36,.2)}
+/* Llave clásica (bracket horizontal izq→der) — carga de Cuartos→Final */
+.bracket{display:flex;gap:10px;overflow-x:auto;padding:6px 2px 10px;align-items:stretch}
+.bkt-col{display:flex;flex-direction:column;flex:0 0 auto;min-width:145px}
+.bkt-col-title{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);text-align:center;opacity:.85;margin-bottom:8px}
+.bkt-matches{display:flex;flex-direction:column;justify-content:space-around;gap:10px;flex:1}
+.bkt-match{background:var(--verde-card);border:1px solid var(--verde-border);border-radius:10px;padding:6px;display:flex;flex-direction:column;gap:5px}
+.bkt-match-label{font-size:9px;color:var(--text-muted);text-align:center;letter-spacing:.5px}
+.bkt-team{width:100%;text-align:left;background:rgba(2,13,4,.6);border:1px solid var(--verde-border);border-radius:7px;padding:8px 9px;color:var(--text);font-size:12px;font-weight:600;font-family:'Barlow',sans-serif;cursor:pointer;transition:all .15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bkt-team:hover:not(:disabled):not(.win){border-color:var(--verde);background:var(--verde-mid)}
+.bkt-team.win{background:var(--verde);border-color:var(--verde);color:#06210f;font-weight:800}
+.bkt-team.empty{color:var(--text-muted);font-style:italic;cursor:default;font-weight:500}
+.bkt-team:disabled{cursor:not-allowed;opacity:.55}
+.bkt-3ro{max-width:230px;margin:8px auto 0}
 
 .login-overlay{position:fixed;inset:0;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;z-index:999;backdrop-filter:blur(8px)}
 .login-box{background:var(--verde-card);border:1px solid var(--verde-border);border-radius:20px;padding:2.5rem;width:320px;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.6)}
@@ -233,7 +246,7 @@ select option{background:#0d2318}
   nav button{font-size:10px;letter-spacing:1px;padding:14px 4px}
 }
 </style>
-<script src="app.js?v=20260701" defer></script>
+<script src="app.js?v=20260701c" defer></script>
 </head>
 <body>
 <div class="field-bg"></div>
@@ -298,8 +311,8 @@ select option{background:#0d2318}
 
 <!-- NAV -->
 <nav>
-  <button id="navProde" class="active" onclick="showPage('prode',this)">⚽ Pronósticos</button>
-  <button id="navDashboard" onclick="showPage('dashboard',this)">📊 Tablas</button>
+  <button id="navProde" onclick="showPage('prode',this)" style="display:none">⚽ Pronósticos</button>
+  <button id="navDashboard" class="active" onclick="showPage('dashboard',this)">📊 Tablas</button>
   <button id="navElim" onclick="showPage('elim',this)" style="display:none">🏆 Eliminatorias</button>
   <button id="adminBtn" onclick="showPage('admin',this)" style="display:none">⚙️ Admin</button>
 </nav>
@@ -307,7 +320,7 @@ select option{background:#0d2318}
 <!-- ================================================================ -->
 <!-- PAGE PRONÓSTICOS -->
 <!-- ================================================================ -->
-<div class="page active" id="page-prode">
+<div class="page" id="page-prode">
   <div class="header">
     <div class="logo">mund<span class="logo-ia">IA</span>l 2026</div>
     <div class="tagline">el concurso de pronósticos más extra-ordinario del Universo</div>
@@ -479,7 +492,7 @@ select option{background:#0d2318}
 <!-- ================================================================ -->
 <!-- PAGE DASHBOARD -->
 <!-- ================================================================ -->
-<div class="page" id="page-dashboard">
+<div class="page active" id="page-dashboard">
   <div class="dash-header">
     <div class="logo" style="font-size:clamp(38px,8vw,64px)">mund<span class="logo-ia">IA</span>l 2026</div>
     <div class="dash-subtitle">📊 Tablas de posiciones en vivo</div>

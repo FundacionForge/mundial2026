@@ -2277,11 +2277,6 @@ function crucePickCard(label, clave, home, away, win){
     if(cerrado) return `<button class="team-pick ${isSel?'sel':''}" disabled>${isSel?'✓ ':''}${team||'—'}</button>`;
     return `<button class="team-pick ${isSel?'sel':''}" ${team?`onclick="pickTeam('${clave}','${(team||'').replace(/'/g,"\\'")}')"`:'disabled'}>${isSel?'✓ ':''}${team||'—'}</button>`;
   };
-  // En el bracket el cierre es único (banner arriba); la tarjeta no repite el pie de cierre.
-  if(win==='llave'){
-    return `<div class="cruce-card" style="${cerrado?'opacity:.6':''}"><div class="cruce-label">${label}</div>
-      <div class="cruce-teams">${btn(home)}${btn(away)}</div></div>`;
-  }
   const info = cerrado
     ? `<span class="elim-badge closed">🔒 Cerrado</span> <span style="color:var(--text-muted)">cerró ${fmtCierreCorto(cierre)}</span>`
     : (cierre
@@ -2308,9 +2303,11 @@ function perdedorDe(key){
   return w===a ? b : a;
 }
 
-// Bracket "Cuartos → Final": cuartos reales (los 8 equipos) → semis y final/3º derivados de
-// tus picks, con cierre único arriba. Numeración FIFA: cuartos P97-100, semis P101/102,
-// 3º P103, final P104. Semis por fixture: P101 = Gº P97 vs Gº P98; P102 = Gº P99 vs Gº P100.
+// Bracket "Cuartos → Final" en formato LLAVE CLÁSICA (columnas izq→der): los 8 equipos en
+// Cuartos; a medida que elegís ganadores se van completando Semis → Final a la derecha, y el
+// 3er puesto (perdedores de semis) aparte. Todo derivado de tus picks, con cierre único arriba.
+// Numeración FIFA: cuartos P97-100, semis P101/102, 3º P103, final P104.
+// Semis por fixture: P101 = Gº P97 vs Gº P98; P102 = Gº P99 vs Gº P100.
 function buildLlaveForm(){
   const cierre=cierreBracket();
   const cerrado=cierre ? (new Date() > new Date(cierre)) : false;
@@ -2319,23 +2316,28 @@ function buildLlaveForm(){
     : (cierre
         ? `🕒 Cierra: <strong style="color:var(--gold)">${fmtCierreCorto(cierre)}</strong> · faltan <span class="elim-cd" data-cierre="${cierre}" style="color:var(--gold);font-weight:700">—</span>`
         : '🕒 Cierre: a definir');
-  const title=t=>`<div class="elim-win-title" style="font-size:15px;margin:1rem 0 .5rem">${t}</div>`;
-  const placeholder=(label,msg)=>`<div class="cruce-card"><div class="cruce-label">${label}</div><div style="font-size:12px;color:var(--text-muted)">${msg}</div></div>`;
-  const derivada=(key,titulo)=>{
-    const [a,b]=matchupDe(key);
-    return (a&&b) ? crucePickCard(titulo, key, a, b, 'llave')
-                  : placeholder(titulo, 'Se habilita al elegir los ganadores de la ronda anterior.');
+
+  const teamBtn=(key,team)=>{
+    if(!team) return `<button class="bkt-team empty" disabled>— a definir —</button>`;
+    const sel = elimSel[key]===team;
+    const safe = String(team).replace(/'/g,"\\'");
+    const oc = cerrado ? '' : `onclick="pickTeam('${key}','${safe}')"`;
+    return `<button class="bkt-team ${sel?'win':''}" ${cerrado?'disabled':''} ${oc} title="${team}">${sel?'✓ ':''}${team}</button>`;
   };
+  const match=(key,label)=>{
+    const [a,b]=matchupDe(key);
+    return `<div class="bkt-match"><div class="bkt-match-label">${label}</div>${teamBtn(key,a)}${teamBtn(key,b)}</div>`;
+  };
+  const col=(t,inner)=>`<div class="bkt-col"><div class="bkt-col-title">${t}</div><div class="bkt-matches">${inner}</div></div>`;
 
   let html=`<div class="cruce-card" style="text-align:center;font-size:12px;background:rgba(251,191,36,.05)">${banner}</div>`;
-  html+=title('Cuartos de final');
-  ['4tos_1','4tos_2','4tos_3','4tos_4'].forEach(k=>{ const c=cr(k); html+=crucePickCard(partidoLabel(k), k, c.home, c.away, 'llave'); });
-  html+=title('Semifinales');
-  html+=derivada('semis_1', partidoLabel('semis_1')+' · Semifinal 1');
-  html+=derivada('semis_2', partidoLabel('semis_2')+' · Semifinal 2');
-  html+=title('Final y tercer puesto');
-  html+=derivada('final_1', partidoLabel('final_1')+' · Final — ¿Campeón? (1º)');
-  html+=derivada('3ro_1',   partidoLabel('3ro_1')+' · Tercer puesto (3º)');
+  html+=`<div class="bracket">
+    ${col('Cuartos', match('4tos_1','P97')+match('4tos_2','P98')+match('4tos_3','P99')+match('4tos_4','P100'))}
+    ${col('Semifinales', match('semis_1','P101')+match('semis_2','P102'))}
+    ${col('Final', match('final_1','P104 · 🏆 Campeón'))}
+  </div>`;
+  html+=`<div class="bkt-col-title" style="margin-top:14px">Tercer puesto</div>
+    <div class="bkt-3ro">${match('3ro_1','P103 · 🥉 3º puesto')}</div>`;
   html+=buildPodioResumen([elimSel['semis_1'],elimSel['semis_2']].filter(Boolean));
   return html;
 }
@@ -2450,9 +2452,9 @@ function configurarNav(){
   const hayElim   = FASES_ELIM_WIN.some(w=>elimState(w.id).known);
   const grupoOpen = new Date() < getFechaLimite();
   const forzarPro = (allData.forzarPronosticos==='1' || allData.forzarPronosticos===true);
-  // Una vez que hay eliminatorias disponibles, "Pronósticos" se oculta (la fase de
-  // grupos ya terminó), salvo que el Admin fuerce mostrarla.
-  const mostrarPro = !hayElim || forzarPro;
+  // "Pronósticos" NO aparece por defecto. Solo se muestra si la fase de grupos sigue
+  // abierta (fecha límite en el futuro) o si el Admin la fuerza. Así no hay flash inicial.
+  const mostrarPro = grupoOpen || forzarPro;
 
   // Solapa de Tablas: respeta la última elegida (al refrescar); si no, default por fase
   if(!window.__tabAutoSet){
