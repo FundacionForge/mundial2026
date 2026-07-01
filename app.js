@@ -3150,7 +3150,7 @@ function elimFaseExport(p, fase){
 // totales (1ra Ronda / Eliminatorias / General), ordenado como la tabla.
 // ================================================================
 function descargarExcel(){
-  const PE=allData.puntosEquipos||{}, GJ=allData.golesJugadores||{};
+  const PE=allData.puntosEquipos||{}, GJ=allData.golesJugadores||{}, GJE=allData.golesJugadoresElim||{};
   const camp=(allData.campeonFinal||'').trim();
   const parts=[...(allData.participantes||[])].sort((a,b)=>calcPuntos(b,'total')-calcPuntos(a,'total'));
   if(!parts.length){ notify('No hay participantes para exportar'); return; }
@@ -3160,7 +3160,7 @@ function descargarExcel(){
   const header=['Nombre','Email','País'];
   for(let i=1;i<=5;i++) header.push('Mejor '+i,'Pts M'+i);
   for(let i=1;i<=5;i++) header.push('Peor '+i,'Pts P'+i);
-  for(let i=1;i<=5;i++) header.push('Goleador '+i,'Goles G'+i);
+  for(let i=1;i<=5;i++) header.push('Goleador '+i,'Goles G'+i,'Goles G'+i+' (Elim)');
   header.push('Campeón','Bonus Campeón');
   FASES_EXPORT.forEach(f=>{
     for(let c=1;c<=f.cruces;c++){
@@ -3178,7 +3178,7 @@ function descargarExcel(){
     const row=[p.nombre||'', p.email||'', p.pais||''];
     for(let i=0;i<5;i++){ const t=mejores[i]||''; row.push(t, t?(PE[t]||0):''); }
     for(let i=0;i<5;i++){ const t=peores[i]||'';  row.push(t, t?(-(PE[t]||0)):''); }
-    for(let i=0;i<5;i++){ const g=goles[i]||'';   row.push(g, g?(GJ[g]||0):''); }
+    for(let i=0;i<5;i++){ const g=goles[i]||'';   row.push(g, g?(GJ[g]||0):'', g?(GJE[g]||0):''); }
     const bonus=(camp&&(p.campeon||'').trim()===camp)?20:0;
     row.push(p.campeon||'', bonus);
     FASES_EXPORT.forEach(f=>{ const e=elimFaseExport(p,f); e.cruces.forEach(cr=>row.push(cr.pick, cr.pts)); row.push(e.total); });
