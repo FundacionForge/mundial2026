@@ -1999,7 +1999,10 @@ function calcPuntos(p,tab){
 function renderDashboard(){
   actualizarTabsDashboard();
   const todos=[...(allData.participantes||[])]
-    .sort((a,b)=>calcPuntos(b,currentTab)-calcPuntos(a,currentTab))
+    .sort((a,b)=>{ // por puntaje desc; a igual puntaje, alfabético por nombre
+      const d=calcPuntos(b,currentTab)-calcPuntos(a,currentTab);
+      return d!==0 ? d : (a.nombre||'').localeCompare(b.nombre||'','es',{sensitivity:'base'});
+    })
     .slice(0,100); // máximo 100 registros en la tabla
 
   const filtro=filtroActivo.toLowerCase().trim();
@@ -3217,7 +3220,10 @@ function elimFaseExport(p, fase){
 function descargarExcel(){
   const PE=allData.puntosEquipos||{}, GJ=allData.golesJugadores||{}, GJE=allData.golesJugadoresElim||{};
   const camp=(allData.campeonFinal||'').trim();
-  const parts=[...(allData.participantes||[])].sort((a,b)=>calcPuntos(b,'total')-calcPuntos(a,'total'));
+  const parts=[...(allData.participantes||[])].sort((a,b)=>{ // por puntaje desc; empate → alfabético por nombre
+    const d=calcPuntos(b,'total')-calcPuntos(a,'total');
+    return d!==0 ? d : (a.nombre||'').localeCompare(b.nombre||'','es',{sensitivity:'base'});
+  });
   if(!parts.length){ notify('No hay participantes para exportar'); return; }
 
   const cell=v => (typeof v==='number') ? String(v) : '"'+String(v==null?'':v).replace(/"/g,'""')+'"';
